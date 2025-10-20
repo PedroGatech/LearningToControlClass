@@ -108,20 +108,22 @@ Let:
 - $\psi_1,\text{...},\psi_m$ be the PCA basis functions of the output space $\mathcal Y$.
 
 The final approximation $\mathcal G^\dagger_{\text{PCA}}:\mathcal X \times \Theta \rightarrow \mathcal Y$ is then given by:
-$$
-\begin{flalign}
+```math
+\begin{align}
 \mathcal G^\dagger_{\text{PCA}}&(x;\theta)(u)=\sum_{j=0}^m\varphi_j(\mathrm Lx;\theta)\psi_j(u) \ \ \ \ \forall\ x\in\mathcal X  \ \ \ \ u\in D_u
-\end{flalign}
-$$
+\end{align}
+```
 That is, the output is the *linear combination* of the PCA output basis functions {$\psi_j$}, weighted by NN coefficients $\varphi_j$, that have as input the $\mathrm Lx$ mapping of the input to the PCA space.
 
 ## DeepONet
 Proposed by \[cite], the DeepONet generalizes the idea of PCA-NET, by means of *learning* the PCA basis functions of the output space $\mathcal Y$, i.e., $\psi_1,...,\psi_m$ are now NNs. The parameter space is then composed of two distinct set of parameters to be learned: $\theta_\varphi$, the same parameters as the original PCA-NET, and $\theta_\psi$, the parameters for the PCA basis functions of the output space. We will then have:
-$$
-\begin{flalign}
+
+```math
+\begin{align}
 \mathcal G^\dagger_{\text{DeepONet}}&(x;\theta)(u)=\sum_{j=0}^m\varphi_j(\mathrm Lx;\theta_\varphi)\psi_j(u;\theta_\psi) \ \ \ \ \forall\ x\in\mathcal X  \ \ \ \ u\in D_u
-\end{flalign}
-$$
+\end{align}
+```
+
 ## Overcoming the curse of dimensionality
 One of the big problems of these approaches is the fact $L_\mathcal Y$ is a linear combination of the {$\psi_j$}. This leads to the need of an doubly exponential growth in the amount of data, when compared to $n$ (the size of the PCA basis functions of the input space $\mathcal X$), to achieve convergence \[cite]. To overcome this difficulty, we're going to generalize this idea of linear approximation of operators to the non-linear case.
 
@@ -166,14 +168,19 @@ This is basically what defines the Fourier Neural operator: the Neural Operator 
 # Galerkin Transformer
 -- TODO --
 Papers to cite:
+
 📖 S. Cao: Choose a Transformer: Fourier or Galerkin (Available [here](https://arxiv.org/abs/2105.14995))
+
 📖 X. Wang: Exploring Efficient Partial Differential Equation Solution Using Speed Galerkin Transformer (Available [here](https://ieeexplore.ieee.org/abstract/document/10793230))
+
 📖 H. Wu: Transolver: A Fast Transformer Solver for PDEs on General Geometries (Available [here](https://arxiv.org/pdf/2402.02366))
 
 
 # Large-scale surrogates
 -- TODO --
 Papers to cite:
+
 📖 T. Grady: Model-Parallel Fourier Neural Operators as Learned Surrogates for Large-Scale Parametric PDEs (Available [here](https://www.sciencedirect.com/science/article/pii/S0098300423001061?casa_token=49-AswW96sUAAAAA:rgUui8eHQVtqwTAn4uzR4-s9i5_ThGu0Fl3m_GI6i5xgYUMbHpgjwkJYgW9l6VFGPdCCjA_LUck))
+
 📖 L. Meyer: Training Deep Surrogate Models with Large Scale Online Learning (Available [here](https://proceedings.mlr.press/v202/meyer23b/meyer23b.pdf))
 

@@ -110,7 +110,7 @@ Let:
 The final approximation $\mathcal G^\dagger_{\text{PCA}}:\mathcal X \times \Theta \rightarrow \mathcal Y$ is then given by:
 ```math
 \begin{align}
-\mathcal G^\dagger_{\text{PCA}}&(x;\theta)(u)=\sum_{j=0}^m\varphi_j(\mathrm Lx;\theta)\psi_j(u) \ \ \ \ \forall\ x\in\mathcal X  \ \ \ \ u\in D_u
+\mathcal{G}^\dagger_{\text{PCA}}&(x;\theta)(u)=\sum_{j=0}^m\varphi_j(\mathrm Lx;\theta)\psi_j(u) \ \ \ \ \forall\ x\in\mathcal X  \ \ \ \ u\in D_u
 \end{align}
 ```
 That is, the output is the *linear combination* of the PCA output basis functions {$\psi_j$}, weighted by NN coefficients $\varphi_j$, that have as input the $\mathrm Lx$ mapping of the input to the PCA space.

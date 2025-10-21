@@ -1,0 +1,466 @@
+
+\documentclass[aspectratio=169]{beamer}
+\usetheme{CambridgeUS}
+\usecolortheme{dolphin}
+\setbeamertemplate{navigation symbols}{}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\title{Dynamic Optimal Control of Power Systems}
+\author{Shuaicheng Tong}
+\date{}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% --- Fuel-Powered Plants
+\begin{frame}{What is Power System?}
+\textbf{Fuel-Powered Plants}
+\begin{columns}[T,onlytextwidth]
+\column{0.5\textwidth}
+\begin{itemize}
+  \item Coal Power Plants
+  \item Natural Gas Plants
+  \item Nuclear Power Plants
+\end{itemize}
+\column{0.5\textwidth}
+\begin{figure}
+\centering
+\includegraphics[width=0.8\textwidth]{images/gasPlant.jpeg}
+\caption{Gas Power Plant}
+\end{figure}
+\end{columns}
+\end{frame}
+
+% --- Renewable Generation
+\begin{frame}{What is Power System?}
+\begin{columns}[T,onlytextwidth]
+\column{0.5\textwidth}
+\textbf{Renewable Generation}
+\begin{itemize}
+  \item Wind Farms
+  \item Solar Plants
+  \item Hydroelectric Plants
+\end{itemize}
+\column{0.5\textwidth}
+\begin{figure}
+\centering
+\includegraphics[width=0.8\textwidth]{images/hydroPlant.jpg}
+\caption{Hydroelectric Plant}
+\end{figure}
+\end{columns}
+\end{frame}
+
+% --- Warm-up
+\begin{frame}{Warm-up Questions}
+\begin{itemize}
+  \item Classic problems in power system:
+  \begin{itemize}
+    \item Optimization
+    \item Generator Dispatch
+  \end{itemize}
+  \item How they relate to control
+  \begin{itemize}
+    \item Think general control that you see in your daily life for now: flipping a switch, pressing a button, etc.
+  \end{itemize}
+  \item What real-world problems are they trying to address
+  \item What problems they are \emph{not} addressing
+  \item What are the constraints? Which are soft and which are hard?
+\end{itemize}
+\end{frame}
+
+% --- 3 Bus Network – Economic Dispatch
+\begin{frame}{3 Bus Network -- Economic Dispatch}
+\begin{columns}[T,onlytextwidth]
+\column{0.5\textwidth}
+\begin{itemize}
+  \item Bus 1 load: 50 MW
+  \item Bus 3 load: 75 MW
+  \item Generator 1: Capacity 100 MW, Cost \$8/MW
+  \item Generator 2: Capacity 40 MW, Cost \$2/MW
+\end{itemize}
+\column{0.5\textwidth}
+\begin{figure}
+\centering
+\includegraphics[width=0.9\textwidth]{images/3Bus.png}
+\caption{3-Bus Power System Network}
+\end{figure}
+\end{columns}
+\end{frame}
+
+% --- Economic Dispatch Question
+\begin{frame}{Economic Dispatch Question}
+\begin{block}{Question}
+What is the Economic Dispatch problem (in its most basic form)?
+\end{block}
+\begin{block}{Answer}
+An optimization problem that aims to find the lowest-cost generation dispatch that satisfies the load demand given the load, generation, and cost.
+\end{block}
+\end{frame}
+
+% --- QP formulation of ED
+\begin{frame}{Quadratic Program (QP) formulation of ED}
+\begin{align}
+\min_{p_g} \quad & \sum_{g \in \mathcal{G}} C_g(p_g) \\
+\text{s.t.} \quad & \sum_{g \in \mathcal{G}} p_g = \sum_{d \in \mathcal{D}} P_d \quad \text{(power balance)} \\
+& p_g^{\min} \leq p_g \leq p_g^{\max} \quad \forall g \in \mathcal{G} \quad \text{(capacity bounds)}
+\end{align}
+
+where:
+\begin{itemize}
+  \item $p_g$: power output of generator $g$
+  \item $C_g(p_g)$: cost function of generator $g$ (often quadratic: $a_g p_g^2 + b_g p_g + c_g$)
+  \item $P_d$: power demand at load $d$
+  \item $\mathcal{G}$: set of generators, $\mathcal{D}$: set of loads
+\end{itemize}
+\end{frame}
+
+% --- Exercise - formulate the ED problem for the 3-bus network
+\begin{frame}{Exercise: Formulate the ED problem for the 3-bus network}
+\begin{figure}
+\centering
+\includegraphics[width=0.7\textwidth]{images/3Bus.png}
+\caption{3-Bus Power System Network}
+\end{figure}
+\end{frame}
+
+% --- ED Formulation Answer
+\begin{frame}{ED Formulation Answer}
+\begin{align}
+\min_{p_1, p_2} \quad & 8p_1 + 2p_2 \\
+\text{s.t.} \quad & p_1 + p_2 = 125 \quad \text{(power balance)} \\
+& 0 \leq p_1 \leq 100 \quad \text{(Gen 1 limits)} \\
+& 0 \leq p_2 \leq 40 \quad \text{(Gen 2 limits)}
+\end{align}
+
+\textbf{Solution:} $p_1 = 85$ MW, $p_2 = 40$ MW
+\begin{itemize}
+  \item Total cost: $8 \times 85 + 2 \times 40 = 760$ \$/hour
+  \item Gen 2 at maximum capacity (greedy)
+  \item Gen 1 supplies remaining demand
+\end{itemize}
+\end{frame}
+
+% --- Discussion Questions
+\begin{frame}{Discussion Questions}
+What do you observe from your formulation?
+\begin{itemize}
+  \item What kind of problem is this (linear, quadratic, etc.)?
+  \item The power network is a graph -- what type? But what is missing here?
+  \item The flow is not controllable - we did not place branch constraints.
+\end{itemize}
+\end{frame}
+
+% --- What's the Problem?
+\begin{frame}{What's the Problem?}
+\begin{itemize}
+  \item The graph should be directed: power has flow directions
+  \item Line ratings and safety are ignored in ED
+  \item I like to think about suspension bridges over rivers. Is it safe for hundreds of people to cross at the same time? Would it be safe for the concrete bridge on 5th street?
+  \item Overloading lines is dangerous (thermal expansion, sag, wildfire risk)
+  \item What is a power line:
+  \begin{itemize}
+    \item Metal coil that expands and heats up when current is higher.
+    \item That’s why we have rating (magnitude of power flow cannot exceed this amount). Physically you can exceed it (nothing is preventing the power to flow) a bit, but there are consequences…
+  \end{itemize}
+  \item We need branch (line) constraints to ensure safe operation
+\end{itemize}
+\end{frame}
+
+% --- DC Power Flow
+\begin{frame}{DC Power Flow}
+\textbf{Data:}
+\begin{itemize}
+  \item Generator set $\mathcal{G}_i$ at bus $i$ (nodal generation)
+  \item Load set $\mathcal{L}_i$ at bus $i$ (nodal load)
+  \item Costs $C_j(P_j)$ quadratic or piecewise-linear for generator $j$
+  \item Line limits $F_\ell^{\max}$, generator bounds $P_j^{\min}, P_j^{\max}$
+\end{itemize}
+
+\textbf{Decision variables:}
+\begin{itemize}
+  \item Generator outputs $P_j$ for $j \in \mathcal{G}_i$
+  \item Bus angles $\theta_i$ for $i \in \mathcal{N}$
+  \item Line flows $f_\ell$ for $\ell \in \mathcal{L}$
+\end{itemize}
+\end{frame}
+
+% --- DC Power Flow Formulation
+\begin{frame}{DC Power Flow Formulation}
+\begin{align}
+\min_{P_j, \theta} \quad & \sum_{i \in \mathcal{N}} \sum_{j \in \mathcal{G}_i} C_j(P_j) \\
+\text{s.t.} \quad & \sum_{j \in \mathcal{G}_i} P_j - \sum_{j \in \mathcal{L}_i} P_j = \sum_{k: (i,k) \in \mathcal{L}} \frac{1}{x_{ik}} (\theta_i - \theta_k) \quad \forall i \in \mathcal{N} \\
+& f_\ell = \frac{1}{x_\ell} (\theta_{i(\ell)} - \theta_{j(\ell)}), \quad -F_\ell^{\max} \leq f_\ell \leq F_\ell^{\max} \quad \forall \ell \in \mathcal{L} \\
+& P_j^{\min} \leq P_j \leq P_j^{\max} \quad \forall j \in \mathcal{G}_i, \forall i \in \mathcal{N} \\
+& \theta_{\text{ref}} = 0
+\end{align}
+
+\begin{itemize}
+  \item $x_{ij}$: reactance of line. $1/x_{ij} = b_{ij}$: susceptance (manufacturer specified)
+  \item Reference bus: only for modeling, you can pick any bus as the reference bus. We only care about angle differences (which carries current through lines
+  \item Individual bus angle has no physical meaning
+\end{itemize}
+\end{frame}
+
+% --- Exercise: solve DCOPF after ED
+\begin{frame}{Exercise: Solve DCOPF (solver suggested: Ipopt)}
+\begin{figure}
+\centering
+\includegraphics[width=0.7\textwidth]{images/3BusWConstraints.png}
+\caption{3-Bus Network with Constraints}
+\end{figure}
+
+\textbf{How did I get the numbers:}
+\begin{itemize}
+  \item Assume P1 generates 85 MW, with 50 MW of load, the net injection is 35 MW
+  \item Assume P2 generates 40 MW, with no load, net injection is 40 MW (we take upwards arrow as injection)
+  \item Bus 3 has no gen, only load
+\end{itemize}
+\end{frame}
+
+% --- DCOPF Solution
+\begin{frame}{DCOPF Solution}
+\begin{figure}
+\centering
+\includegraphics[width=0.3\textwidth]{images/DCOPFAnswer1.png}
+\caption{DCOPF Solution Results}
+\end{figure}
+\end{frame}
+
+% --- DCOPF Solution Details
+\begin{frame}{DCOPF Solution Details}
+\begin{figure}
+\centering
+\includegraphics[width=0.5\textwidth]{images/DCOPFAnswer2.jpeg}
+\caption{DCOPF Detailed Analysis}
+\end{figure}
+\end{frame}
+
+% --- Wrap up
+\begin{frame}{Wrap Up}
+\begin{itemize}
+  \item You will see that without thermal limits, optimal dispatch can overload lines
+  \item In operation, operators typically solve a DCOPF (e.g., with Ipopt)
+  \item Reference bus is arbitrarily picked by the solver.
+  \item Real systems are AC (complex voltages/currents) -- much harder. This is just a lightweight intro so we can think about these problems without overburdening ourselves with AC physics.
+\end{itemize}
+\end{frame}
+
+% --- Power System History and Modern Power System
+\begin{frame}{Power System History and Modern Power System}
+\begin{block}{The Fuel Era (20th Century)}
+Electricity produced mostly by coal, gas, nuclear. Generators are large synchronous machines with big spinning masses. Stable and predictable. Inertia from these machines naturally provides flexibility infrequency stability. Grid ran reliably for decades.
+\end{block}
+\begin{block}{The Renewable Era (2000s--Today)}
+Wind expanded in 2000s, solar PV took off after 2010. Renewables now 20--40\%+ of real-time demand in some regions; dynamics changed.
+\end{block}
+\end{frame}
+
+% --- Synchronous Generators: How electricity is generated
+\begin{frame}{Synchronous Generators: How electricity is generated}
+\begin{columns}[T,onlytextwidth]
+\column{0.5\textwidth}
+\begin{itemize}
+  \item Rotor (heavy spinning mass) driven by turbines (steam, gas, hydro)
+  \item Faraday's law: changing magnetic field induces voltage in stator
+  \item Called "synchronous" because the rotor spins in sync with the grid's frequency (50 Hz in Europe, 60 Hz in North America)
+  \item If the grid frequency is 60 Hz, the rotor turns at a speed locked to 60 Hz
+\end{itemize}
+\column{0.5\textwidth}
+\begin{figure}
+\centering
+\includegraphics[width=0.9\textwidth]{images/syncgen.png}
+\caption{Generator Cross-Section}
+\end{figure}
+\end{columns}
+\end{frame}
+
+% --- Spinning Mass in a Generator
+\begin{frame}{Spinning Mass in a Generator}
+\begin{itemize}
+  \item Inside a synchronous generator is a rotor — basically a giant heavy wheel of steel and copper (tens or hundreds of tons)
+  \item Turbines (steam from coal/nuclear, gas combustion, or flowing water in hydro) push on the rotor to make it spin
+  \item That rotor's mechanical rotation creates a rotating magnetic field, according to Faraday's law of induction, a changing magnetic field induces an alternating voltage in the stator windings
+  \item This is why the system is predictable: we know how to control these rotors. Put in more fuel to generate more power
+\end{itemize}
+\end{frame}
+
+% --- Generator Frequency Formula
+\begin{frame}{Generator Frequency Formula}
+\textbf{Frequency Formula:}
+\begin{align}
+f = \frac{N \times \text{RPM}}{120}
+\end{align}
+where $N$ = number of poles, RPM = rotor speed
+
+\textbf{Examples:}
+\begin{itemize}
+  \item 2 poles, 3600 RPM → 60 Hz
+  \item 4 poles, 1800 RPM → 60 Hz
+\end{itemize}
+
+\textbf{Why 50/60 Hz?} Historical choices: early engineers (Westinghouse, Edison, etc.) picked values that balanced motor performance and generator design. Once infrastructure was built, it became a standard.
+\end{frame}
+
+% --- Kinetic Energy
+\begin{frame}{Kinetic Energy}
+\textbf{The rotor has stored kinetic energy:}
+\begin{align}
+E_{\text{kinetic}} = \frac{1}{2} J \omega^2
+\end{align}
+where $J$ = moment of inertia (depends on mass + geometry), $\omega$ = rotor speed
+
+\textbf{If demand suddenly exceeds supply (a generator trips):}
+\begin{itemize}
+  \item That small slow down of a rotor releases some of its stored kinetic energy into the grid instantly
+  \item But because there are so many large spinning machines, the grid behaves like a conveyor belt with so many wheels tied together. If one slows a bit, the others share the imbalance, so frequency changes slowly because the system has a huge inertia
+  \item This gives time for operators to fix things
+  \item Even if there are imbalances, things wouldn't get out of hand fast since there are so many other generators. They can share the load so each only needs to spin a little faster to keep up the frequency
+\end{itemize}
+\end{frame}
+
+% --- Renewables and Inverters
+\begin{frame}{Inverters - Renewables}
+\textbf{Today, renewables can supply 20–40\%+ of real-time demand.}
+Cleaner, cheaper, more sustainable — but dynamics changed.
+
+Most renewables (solar PV, modern wind turbines, batteries) produce DC electricity (direct current).
+
+\textbf{What's the problem of DC power?}
+\begin{itemize}
+  \item It only has amplitude (magnitude of voltage/current)
+  \item No phase, no frequency
+  \item But recall AC current has the waveform (that's why we have leading/lagging current which controls reactive power and power factor correction)
+  \item We need amplitude, frequency, and phase to describe AC current
+  \item That's why we need inverters, power electronics device that synthesizes sinusoidal AC from DC
+\end{itemize}
+\end{frame}
+
+% --- Inverter Operation (continued)
+\begin{frame}{Inverter Operation}
+\textbf{How it operates?}
+\begin{enumerate}
+  \item Takes DC input from solar panels, wind turbine
+  \item Use power electronics that switches thousands of time per second to synthesize an AC waveform
+  \item Note that even the output is a smooth sinusoidal AC waveform, inside the inverter the switches turn the DC voltage on and off thousands of times per second (typical switching frequency = 2–20 kHz, sometimes higher) to approximate that smooth waveform
+  \item So even though the output is continuous, it's created by on/off pulses internally
+  \item The inverter synchronizes the AC output to the grid's frequency and phase. If grid is 60 Hz → inverter outputs 60 Hz. If grid is 59.9 Hz (after a disturbance) → inverter follows 59.9 Hz.
+  \item The voltage, current, and power factor are controlled through the programmed algorithms
+\end{enumerate}
+\end{frame}
+
+% --- Inverter Control Modes
+\begin{frame}{Inverter Control Modes}
+\textbf{In summary, the inverters are programmable devices by operators with control algorithms to act like generators. They wait for a signal from a grid so they can be:}
+\begin{itemize}
+  \item \textbf{Grid-following}: track the grid's voltage and frequency → inject current accordingly
+  \item \textbf{Grid-forming}: behave like a voltage source, set their own frequency/voltage reference, and to adjust for power imbalance (some research area I heard of)
+\end{itemize}
+
+They are not really generators - no spinning mass, no inertia, but they use control algorithms to mimic generator behavior.
+\end{frame}
+
+% --- Internal view of inverters (placeholder)
+\begin{frame}{Internal View of Inverters}
+\begin{figure}
+\centering
+\includegraphics[width=0.3\textwidth]{images/inverter.jpg}
+\caption{Internal View of Inverter}
+\end{figure}
+
+\begin{itemize}
+  \item Capacitors and switching components on electronic mainboards (like in computer's motherboard, blue cylinders in upper left corner of the picture)
+  \item Programmable behavior defined by control firmware
+\end{itemize}
+\end{frame}
+
+% --- Problems with inverters
+\begin{frame}{Problems with Inverters}
+\textbf{This is all software-based. You do not have a natural physical property like a spinning rotor and inertia.}
+
+\begin{itemize}
+  \item No big spinning mass directly tied to frequency, so frequency changes much faster after a disturbance
+  \item The device measures grid signal and forces its output to follow
+  \item Unless explicitly programmed, they don't know when the conveyor belt slows down or speeds up (recall the previous analogy)
+  \item Even if they do, they don't have the capacity like big generators
+  \item \textbf{This is the key part:} they are just switching circuits with no agency to ramp up the power output (nature of renewables is their output is often independent of human control). Output is limited by weather and energy availability (sun/wind).
+  \item Renewables also locate in remote areas with long transmission lines, and the nature of their unpredictability (weather), makes their generation highly uncertain
+\end{itemize}
+
+\textbf{We will build up to inverter control after we cover the generator swing equations.}
+\end{frame}
+
+% --- Generator Swing Equations
+\begin{frame}{Generator Swing Equations}
+\begin{itemize}
+  \item Newton's second law applied to rotor dynamics
+  \item Balance of accelerating vs.\ damping torques
+  \item Links mechanical input, electrical output, frequency/angle dynamics
+\end{itemize}
+\end{frame}
+
+% --- Why this matters
+\begin{frame}{Why This Matters}
+\begin{itemize}
+  \item Stability depends on balancing generation and demand
+  \item Inertia slows frequency changes, buying time for control actions
+\end{itemize}
+\end{frame}
+
+% --- How does it relate to Inverters
+\begin{frame}{How Does It Relate to Inverters?}
+\begin{itemize}
+  \item Grid-following inverters measure grid signals and deliver set power
+  \item Stable only if the rest of the grid is stable
+\end{itemize}
+\end{frame}
+
+% --- Grid-forming Inverters
+\begin{frame}{Grid-forming Inverters}
+\begin{itemize}
+  \item Behave like voltage sources; define their own frequency/voltage reference
+  \item Let frequency shift slightly to reflect power imbalance
+  \item Emulate synchronous machine behavior via control (``virtual inertia'')
+  \item See: J. Driesen and K. Visscher, \emph{Virtual synchronous generators}, PES GM 2008.
+\end{itemize}
+\end{frame}
+
+% --- Virtual Inertia (continued)
+\begin{frame}{Virtual Inertia (continued)}
+\begin{itemize}
+  \item Adjust internal frequency reference according to power imbalance
+  \item Grid sees behavior similar to a synchronous machine
+  \item Replaces physics with software; enables renewable participation in stability
+\end{itemize}
+\end{frame}
+
+% --- Droop Control / Reactive-Voltage (placeholders)
+\begin{frame}{Droop Control}
+\begin{itemize}
+  \item Frequency-power and voltage-reactive power droop characteristics
+  \item Decentralized sharing of load changes among generators/inverters
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Reactive Power and Voltage Control}
+\begin{itemize}
+  \item Reactive power supports voltage; local supply reduces losses
+  \item Inverters and generators can regulate power factor and voltage
+\end{itemize}
+\end{frame}
+
+% --- Conveyor-belt analogy
+\begin{frame}{Analogy throughout the class: Conveyor Belt of Wheels}
+\begin{itemize}
+  \item Generators like wheels on a conveyor belt
+  \item If one slows, others must speed up to keep belt speed (demand) constant
+  \item Large deviations in angle/frequency can trip more generators $\rightarrow$ cascading effects
+\end{itemize}
+\end{frame}
+
+\end{document}

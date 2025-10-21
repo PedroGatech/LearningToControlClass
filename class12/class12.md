@@ -63,7 +63,7 @@ T \text{ is the temperature distribution on the tissue}
 \\
 k \text{ is the tissue's thermal conductivity}
 \\
-\sigma &\text{ is the tissue's electrical conductivity}
+\sigma \text{ is the tissue's electrical conductivity}
 \\
 E \text{ is the electric field distribution}
 \\

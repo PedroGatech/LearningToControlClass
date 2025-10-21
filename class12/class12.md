@@ -20,7 +20,7 @@ Key differences:
 - A vector is *naturally* discrete. Therefore, the input-output pair for functions are also *naturally* discrete. 
 - A function is *naturally* continuous. Therefore, the input-output pair for operators are also *naturally* continuous.
 
-It is said that Neural Networks (NN) are **universal function approximators** \[cite], in this section we're going to ~~try to~~ create the idea of **universal operator approximators**, that map functions to functions, using something called **Neural Operators**.
+It is said that Neural Networks (NN) are **universal function approximators** \[cite], in this section we're going to create the idea of **universal operator approximators**, that map functions to functions, using something called **Neural Operators**.
 
 A NN $\mathcal N$ can be thought as a general **function** $\mathcal N: X \times \Theta \rightarrow Y$, where $X$ and $Y$ are vector spaces, and $\Theta$ is the parameter space. So we take elements $x \in X$ and we *learn* how to map those onto $y\in Y$, by means of changing the parameters $\theta \in \Theta$. That way, we can approximate any function (that's where the "universal function approximator" comes from) that maps $X \rightarrow Y$. 
 In a similar way we can think about a Neural Operator $\mathcal G^\dagger: \mathcal X \times \Theta \rightarrow \mathcal Y$, where $\mathcal X$ and $\mathcal Y$ are function spaces, and $\Theta$ is the parameter space. Now, instead of learning how to map *vectors*, we're going to learn the mapping of *functions*. This general idea will be expanded further.
@@ -32,6 +32,8 @@ When putting into a computer we are going to need to mesh our function, otherwis
 - The input **has to** be $256\times256$, the need of different dimension leads to a new NN and a new training.
 - In case of regression, the output **has to** a fixed dimension, the need of different dimension leads to a new NN and a new training.
 For the case of image processing, where there's no trivial underlying function behind the image, we cannot take advantage of the use of Neural Operators, but in the case of distributions of physical quantities, e.g., temperature, where there's a underlying function behind it, we can leverage the use of Neural Operators to understand distribution function, and make predictions/controls based on it, decoupling the parametrization $\Theta$ from the discretization of the data. \[cite] *et al.* compared the errors of two networks: U-Net (NN topology) and PCA-Net (Neural operator topology), that were trained on different discretizations of the *same underlying function*, and the result is shown below:
+
+![Alt text](Figures/diagram.png)
 
 This brings a concept (that we'll try to keep with our definition of Neural Operators) called **Discretization Invariance**:
 - When we have Discretization Invariance we de-couple the parameters and the cost from the discretization, i.e., when changing the discretization the error doesn't vary.
@@ -76,6 +78,9 @@ Imagine that I want to approximate this operator $\mathcal G$ by means of an $\m
 
 A general diagram is shown below:
 
+![Alt text](Figures/diagram.png)
+
+
 In this case, we can see that our $\mathcal G^\dagger$ can be given by $\mathcal G^\dagger = K_\mathcal X \circ \varphi\circ L_\mathcal Y$, where $K_\mathcal X$ and $L_\mathcal Y$ are the operators that project $\mathcal X$ and $\mathcal Y$ to the non-infinite dimension spaces $\mathbb R^{n}$ and $\mathbb R^{n}$, respectively, and $\varphi$ is a non-linear function that maps $\mathbb R^{n}$ to $\mathbb R^{m}$. Different selections of the set {$K_\mathcal W$, $L_\mathcal W$, $\varphi$} generate different classes of Neural Operators.
 
 We can, from this, see the first limitation of this technique: we're limited by how well is the approximation of $K_\mathcal WL_\mathcal W \approx I$. It turns out that, as described by \[cite], this is approximation is fairly general:
@@ -92,9 +97,9 @@ Let:
 - $\mathcal X$ be separable Banach spaces, and $\mu \in \mathcal P(\mathcal X)$ be a probability measure in $\mathcal X$.
 - $\mathcal G \in L_\mu^p(\mathcal X;\mathcal Y)$ for some $1\leq p < \infty$
 If $\mathcal Y$ is separable Hilbert space, and $\epsilon > 0$, *there exists* continuous, linear maps $K_\mathcal X:\mathcal X \rightarrow \mathbb R^n$,  $L_\mathcal Y:\mathcal Y \rightarrow \mathbb R^m$, and $\varphi: \mathbb R^n \rightarrow \mathbb R^m$ such that:
-$$
+```math
 \| \mathcal G(u)-\mathcal G^\dagger(u)\|_{L_\mu^p(\mathcal X;\mathcal Y)} < \epsilon
-$$
+```
 Let's start by giving two classes of Neural Operators, the Principal Component Analysis Network (PCA-NET) and the Deep Operator Network (DeepONet).
 
 ## PCA
@@ -133,9 +138,9 @@ Let:
 	- In the linear case, as described before, $S_1 = K_\mathcal X$, $S_L = K_\mathcal Y$ and they're connected through multiple $\varphi_j$.
 The above definition *looks a lot* like the typical definition of NNs, where each one of the $S_l$ is a layer of your NN. And, as we're going to see, it is! At least it is a generalization of the definition of NN to function space.
 \[cite] *et al.* proposed to create each one of this $S_l$ as follows:
-$$
+```math
 S_l(a)(x) = \sigma_l\bigg( W_la(x) + b_l + \int_\Omega\mathrm dz \ \kappa_l(x,z)a(z)  \bigg), \ \ \ \ x \in \Omega
-$$
+```
 where:
 - $\sigma_l:\mathbb R^k\rightarrow\mathbb R^k$ is the non-linear activation function.
 - $W_l\in\mathbb R^k$ is a term related to a "residual network".
@@ -148,19 +153,19 @@ Different selections of $\kappa_l$ generate different classes of these non-linea
 
 # Fourier Neural Operator
 Let $\kappa_l(x,z)=\kappa_l(x-z)$, the integral will then become:
-$$
+```math
 \int_\Omega \mathrm dz \ \kappa_l(x,z)a(z) = \int_\Omega \mathrm dz \ \kappa_l(x-z)a(z) =\kappa_l(x) * a(x)
-$$
+```
 where $*$ represents the convolution operator.
 And, as we know from Fourier Transformation Theory, 
-$$
+```math
 \mathcal F\{\kappa_l(x)*a(x)\} = \mathcal F\{\kappa_l(x)\} \cdot\mathcal F\{a(x)\}
-$$
+```
 where $\mathcal F\{\cdot\}$ represents the Fourier transform of a function.
 We can than reduce the single layer $S_l$ represented before to the following:
-$$
+```math
 S_l(a)(x) = \sigma_l\bigg( W_la(x) + b_l + \mathcal F^{-1}\{\mathcal F\{\kappa_l(x)\} \cdot\mathcal F\{a(x)\}\}  \bigg), \ \ \ \ x \in \Omega
-$$
+```
 This is basically what defines the Fourier Neural operator: the Neural Operator $\mathcal G^\dagger=S_1\circ \text{...} \circ S_L$ where each one of these $S_l$ is done by up/downscaling the previous output function using its fourier expansions.
 
 

@@ -39,35 +39,35 @@ This brings a concept (that we'll try to keep with our definition of Neural Oper
  
 # Operator basics
 Let the operator $\mathcal G: \mathcal X \rightarrow \mathcal Y$, where $\mathcal X$ and  are separable Banach spaces (mathematical way of saying that $\mathcal X$ and $\mathcal Y$ are spaces of functions) of vector-valued functions:
-$$
-\begin{flalign}
-\mathcal X&=\{x: D\rightarrow \mathbb R\}, \ \ \ D \subseteq\mathbb R^d
+```math
+\begin{align}
+\mathcal X=\{x: D\rightarrow \mathbb R\}, \ \ \ D \subseteq\mathbb R^d
 \\
-\mathcal Y&=\{y: D\rightarrow \mathbb R\}
-\end{flalign}
-$$
+\mathcal Y=\{y: D\rightarrow \mathbb R\}
+\end{align}
+```
 For example, $D$ is a cut plane of a biological tissue ($D \subseteq\mathbb R^2$) under the application of electric fields, and $x\in\mathcal X$ and $y\in\mathcal Y$ are temperatures before and after the application of said fields. The operator $\mathcal G$ is given by:
-$$
+```math
 \rho c_p\partial_tT =\nabla \cdot(k\nabla T) + \sigma|E|^2-Q
-$$
+```
 where
-$$
-\begin{flalign}
-\rho &\text{ is the tissue's density}
+```math
+\begin{align}
+\rho \text{ is the tissue's density}
 \\
-c_p &\text{ is the tissue's heat capacity}
+c_p \text{ is the tissue's heat capacity}
 \\
-T &\text{ is the temperature distribution on the tissue}
+T \text{ is the temperature distribution on the tissue}
 \\
-k &\text{ is the tissue's thermal conductivity}
+k \text{ is the tissue's thermal conductivity}
 \\
 \sigma &\text{ is the tissue's electrical conductivity}
 \\
-E &\text{ is the electric field distribution}
+E \text{ is the electric field distribution}
 \\
-Q &\text{ is the heat transfer, from blood/metabolism}
-\end{flalign}
-$$
+Q \text{ is the heat transfer, from blood/metabolism}
+\end{align}
+```
 This is one specific case of an operator, but any PDE can be thought as an operator.
 
 ## Approximations
@@ -84,9 +84,9 @@ Let:
 - $\mathcal X$ and $\mathcal Y$ be separable Banach spaces.
 - $\mathcal G: \mathcal X \rightarrow \mathcal Y$ be continuous.
 For any $U\subset \mathcal X$ compact and $\epsilon > 0$, *there exists* continuous, linear maps $K_\mathcal X:\mathcal X \rightarrow \mathbb R^n$,  $L_\mathcal Y:\mathcal Y \rightarrow \mathbb R^m$, and $\varphi: \mathbb R^n \rightarrow \mathbb R^m$ such that:
-$$
+```math
 \sup_{u\in U} \| \mathcal G(u)-\mathcal G^\dagger(u)\|_\mathcal Y < \epsilon
-$$
+```
 Average approximation:
 Let: 
 - $\mathcal X$ be separable Banach spaces, and $\mu \in \mathcal P(\mathcal X)$ be a probability measure in $\mathcal X$.

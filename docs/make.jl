@@ -11,11 +11,22 @@ plutos = [
     joinpath(repo_dir, "class01", "background_materials", "optimization_basics.html"),
     joinpath(repo_dir, "class01", "background_materials", "optimization_motivation.html"),
     joinpath(repo_dir, "class01", "class01_intro.html"),
+    joinpath(repo_dir, "class02", "part1_minimization.html"),
+    joinpath(repo_dir, "class02", "part1_root_finding.html"),
+    joinpath(repo_dir, "class02", "part2_eq_constraints.html"),
+    joinpath(repo_dir, "class02", "part3_ipm.html"),
+    joinpath(repo_dir, "class05", "class05.html"),
 ]
 
 if !isdir(build_dir)
     symlink(joinpath(repo_dir, "class01"),
         joinpath(repo_dir, "docs", "src", "class01")
+    )
+    symlink(joinpath(repo_dir, "class02"),
+        joinpath(repo_dir, "docs", "src", "class02")
+    )
+    symlink(joinpath(repo_dir, "class05"),
+        joinpath(repo_dir, "docs", "src", "class05")
     )
 end
 
@@ -36,6 +47,8 @@ makedocs(
         "Class 1" => ["class01/class01.md",
             "class01/background_materials/git_adventure_guide.md",
         ],
+        "Class 2" => "class02/overview.md",
+        "Class 5" => "class05/class05.md",
     ],
 )
 
@@ -46,6 +59,8 @@ for pluto in plutos
 end
 
 rm(joinpath(repo_dir, "docs", "src", "class01"), force=true)
+rm(joinpath(repo_dir, "docs", "src", "class02"), force=true)
+rm(joinpath(repo_dir, "docs", "src", "class05"), force=true)
 
 # In case we want to generate HTML from Pluto notebooks in CI
 # plutos = [

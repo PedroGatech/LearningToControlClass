@@ -33,7 +33,7 @@ When putting into a computer we are going to need to mesh our function, otherwis
 - In case of regression, the output **has to** a fixed dimension, the need of different dimension leads to a new NN and a new training.
 For the case of image processing, where there's no trivial underlying function behind the image, we cannot take advantage of the use of Neural Operators, but in the case of distributions of physical quantities, e.g., temperature, where there's a underlying function behind it, we can leverage the use of Neural Operators to understand distribution function, and make predictions/controls based on it, decoupling the parametrization $\Theta$ from the discretization of the data. \[cite] *et al.* compared the errors of two networks: U-Net (NN topology) and PCA-Net (Neural operator topology), that were trained on different discretizations of the *same underlying function*, and the result is shown below:
 
-![Alt text](Figures/diagram.png)
+![Alt text](Figures/unetvspca.png)
 
 This brings a concept (that we'll try to keep with our definition of Neural Operators) called **Discretization Invariance**:
 - When we have Discretization Invariance we de-couple the parameters and the cost from the discretization, i.e., when changing the discretization the error doesn't vary.

@@ -157,32 +157,94 @@ Let $\kappa_l(x,z)=\kappa_l(x-z)$, the integral will then become:
 \int_\Omega \mathrm dz \ \kappa_l(x,z)a(z) = \int_\Omega \mathrm dz \ \kappa_l(x-z)a(z) =\kappa_l(x) * a(x)
 ```
 where $*$ represents the convolution operator.
-And, as we know from Fourier Transformation Theory, 
+
+And, as we know from Fourier Transform Theory, 
 ```math
-\mathcal F\{\kappa_l(x)*a(x)\} = \mathcal F\{\kappa_l(x)\} \cdot\mathcal F\{a(x)\}
+\mathcal F\{\kappa_l(x)*a(x)\} = \mathcal F\{\kappa_l(x)\} \cdot\mathcal F\{a(x)\} :=\hat \kappa_l(v)\hat a(v)
 ```
 where $\mathcal F\{\cdot\}$ represents the Fourier transform of a function.
-We can than reduce the single layer $S_l$ represented before to the following:
+
+We can than reduce the single layer $S_l$, shown before, to the following:
 ```math
-S_l(a)(x) = \sigma_l\bigg( W_la(x) + b_l + \mathcal F^{-1}\{\mathcal F\{\kappa_l(x)\} \cdot\mathcal F\{a(x)\}\}  \bigg), \ \ \ \ x \in \Omega
+S_l(a)(x) = \sigma_l\bigg( W_la(x) + b_l + \mathcal F^{-1}\{\hat\kappa_l(v) \hat a(v)\}  \bigg), \ \ \ \ x \in \Omega \ \ \ \ v \in \Omega^\ddagger
 ```
-This is basically what defines the Fourier Neural operator: the Neural Operator $\mathcal G^\dagger=S_1\circ \text{...} \circ S_L$ where each one of these $S_l$ is done by up/downscaling the previous output function using its fourier expansions.
+where $\Omega^\ddagger \subset \mathbb C^d$ represent the spectral Fourier space related to $\Omega$.
+
+This is basically what defines the Fourier Neural Operator (FNO): the Neural Operator $\mathcal G^\dagger=S_1\circ \text{...} \circ S_L$ where each one of these $S_l$ is done by "filtering" the previous output function using its Fourier expansions.
+
+The overall diagram of the process is shown bellow, and a walkthrough will follow:
+
+![Alt text](Figures/FourierDiagram.png)
+
+## Walkthrough
+
+### Lifting (P) and Projection (Q) layers
+
+
+### Fourier layers
+As stated before, the Fourier Layers are composed following the equation below:
+```math
+S_l(a)(x) = \sigma_l\bigg( W_la(x) + b_l + \mathcal F^{-1}\{\hat\kappa_l(v) \hat a(v)\}  \bigg), \ \ \ \ x \in \Omega \ \ \ \ v \in \Omega^\dagger
+```
+An interesting thing about the the kernel $\hat \kappa_l(v)$ is that it has a non-zero value for the first couple of values (here called $K_\kappa$) and zero for the last values. That is, the product $\hat\kappa_l(v) \cdot\hat a(v)$ is given by:
+```math
+(\hat\kappa_l(v) \hat a(v))_j = \begin{cases} W_\kappa\hat a_j(v), & j\leq K_\kappa\\0, & j> K_\kappa \end{cases}
+```
+where $W_\kappa$ are the (trainable) weights for the kernel, and $j$ represents each mode ("frequency component").
+
+We can see this "low-pass filter" behavior of the kernel represented on the "zoom" of the general diagram (b), where the high frequencies vanish, while the remaining low frequencies are multiplied by a certain weight.
+After this "filtering" and weighting, we apply the inverse FFT get the $\mathcal F^{-1}\{\hat\kappa_l(v) \cdot\hat a(v)\}$ term.
+
+Meanwhile we also have the so called "1D Convolution", represented by $W_la(x)$, with trainable $W_l$. It is not strictly necessary to be used, but it helps with convergence speed \[cite], and the (also trainable) bias term $b_l$, suppressed on the figure. The sum of all the aforementioned terms is then passed by a non-linear activation function $\sigma$, defined _a priori_.
+
+And, finally, T (defined _a priori_) of these layers are concatenated, before being projected down by the layer **Q**, to produce the output $u(x)$.
+
+## Zero-shot Superresolution
+An interesting fact about the usage of Neural Operators is their **Discretization invariance**, that is, as shown on Figure 1, a change in discretization didn't lead to a change in test error.
+
+This was leveraged using FNO to the so-called Zero-shot Superresolution: where the Neural Operator can be trained on a dataset with a smaller discretization (i.e., on a coarser grid) and, using the same Network predict using a finer grid. The following figure showcase this for the Burgers 1D equation, shown below, and with $x \in \mathbb R^{256}$.
+```math
+\text{Burgers 1D equation: } \frac{\partial u}{∂ t} + \frac{1}{2}\frac{\partial u^2}{\partial x} = \nu \frac{\partial^2 u}{\partial x^2}
+```
+![alt text](Figures/PlotLowRes.png)
+With the maximum difference between Prediction and Ground Truth being `~ 6e-3`. 
+
+After the training, the same Network was used to predict outputs for $x\in\mathbb R^{2048}$, and we have the following:
+![alt text](Figures/PlotHighRes.png)
+
+With the maximum difference between Prediction and Ground Truth being, once again, `~ 6e-3`. 
 
 
 
-# Galerkin Transformer
--- TODO --
-Papers to cite:
 
-📖 S. Cao: Choose a Transformer: Fourier or Galerkin (Available [here](https://arxiv.org/abs/2105.14995))
+# Galerkin 
+Before talking abour the Galerkin transformer, it could be interesting to talk about the Galerkin Projection.
 
-📖 X. Wang: Exploring Efficient Partial Differential Equation Solution Using Speed Galerkin Transformer (Available [here](https://ieeexplore.ieee.org/abstract/document/10793230))
+## Galerkin Projection
+Similar to PCA, the Galerkin Projection projects a function onto a basis of function{$\xi_i$}, but **respecting a operator**. That is, imagine that I have an operator $\mathcal G$ s.t. $\mathcal G[x] = y$ where $x \in \mathcal X$ and $y \in \mathcal Y$ are functions, we can approximate x by means of 
+```math
+x(u) \approx \sum_i c_i\xi_i(u)
+```
 
-📖 H. Wu: Transolver: A Fast Transformer Solver for PDEs on General Geometries (Available [here](https://arxiv.org/pdf/2402.02366))
 
+## Galerkin Transformer
+An interesting thing about transformer is that, in general, the whole output function depends globally on the input function. I.e., let the function $f(x)$, solution of a certain PDE that has as input $g(x)$, and let $x_0\in\Omega$ a fixed point; $f(x_0)$ will depend on $g(x)\forall x\in\Omega$. With this in mind, and creating a parallel with transformers and Attention, Shuhao _et al._ \[cite] developed the Galerkin transformer, that uses an "attention-based" kernel $\kappa_l(x,z)$.
+
+This kernel embodies the essential non-local coupling across the spatial domain, dictating how information at point $z$ influences the output at point $x$. In its continuous form, the kernel $\kappa_l$ is too complex to parameterize directly. We can achieve an approximation by representing the kernel through a factorized form: $\kappa_l(x, z) \approx \phi(Q_l a(x))^\top \psi(K_l a(z))$, where $Q_l$ and $K_l$ are learnable linear maps, and $\phi$ and $\psi$ are feature transformations. Intuitively, each spatial location is mapped to a vector that describes its role in global interactions. 
+
+The matrices $Q_l$ and $K_l$ act as projection operators, transforming the local feature $a(x)$ into a query vector $q_x = Q_l a(x)$ and $a(z)$ into a key vector $k_z = K_l a(z)$, respectively. These vectors share a common latent space, and their inner product, $q_x \cdot k_z$, measures the affinity or relevance between the two locations. 
+
+To complete the information aggregation, a third linear map, $V_l$, transforms $a(z)$ into a value vector $v_z = V_l a(z)$. The resulting approximation to the kernel integral $\int_\Omega \mathrm dz\ \kappa_l(x, z)a(z)$ is then written as the sum: $\sum_{z} \phi(Q_l a(x))^\top \psi(K_l a(z))\, v_z$. The full discrete neural operator layer thus becomes $S_l(a)(x) = \sigma_l\left(W_l a(x) + b_l + \sum_{z} \phi(Q_l a(x))^\top \psi(K_l a(z))\, V_l a(z)\right)$, where $W_l$ and $b_l$ handle local transformations, and $\sigma_l$ introduces nonlinearity. All projection matrices and feature maps are learned, enabling the network to infer the kernel's structure and the relevant latent dynamics.
+
+The Galerkin transformer is a specific case where the function $a(x)$ is expanded in a finite basis $\{\phi_i(x)\}_{i=1}^M$ using a coefficient vector $c=(c_1,\dots,c_M)$. In this case, attention is computed between these modal coefficients rather than spatial points. Each mode $i$ produces its own query, key, and value vectors via the same projection operators, resulting in the modal update: $\tilde{c}_i = \sigma_l\left(W_l c_i + b_l + \sum_{j} \phi(Q_l c_i)^\top \psi(K_l c_j)\, V_l c_j \right)$. This modal attention mechanism ensures the learned operator acts within the finite-dimensional Galerkin subspace, preserving the projection structure of PDE solvers while allowing for adaptive, data-driven coupling between modes.
+# Potential improvements and connection to the PINNs
+All the networks shown are classified as "PDE-agnostic", that is, there's no implicit step that ensures that our predicted output matches the PDE that we're trying to solve.
+
+But PINN-based structures are being develop to connect this two concepts.
 
 # Large-scale surrogates
 -- TODO --
+
 Papers to cite:
 
 📖 T. Grady: Model-Parallel Fourier Neural Operators as Learned Surrogates for Large-Scale Parametric PDEs (Available [here](https://www.sciencedirect.com/science/article/pii/S0098300423001061?casa_token=49-AswW96sUAAAAA:rgUui8eHQVtqwTAn4uzR4-s9i5_ThGu0Fl3m_GI6i5xgYUMbHpgjwkJYgW9l6VFGPdCCjA_LUck))

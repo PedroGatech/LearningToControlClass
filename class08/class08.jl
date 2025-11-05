@@ -41,7 +41,11 @@ References:
 
 * Olfati-Saber, Reza, J. Alex Fax, and Richard M. Murray. "Consensus and cooperation in networked multi-agent systems." Proceedings of the IEEE 95.1 (2007): 215-233.
 
+* Boyd, Stephen, et al. "Distributed optimization and statistical learning via the alternating direction method of multipliers." Foundations and Trends® in Machine learning 3.1 (2011): 1-122.
 
+* Summers, Tyler H., and John Lygeros. "Distributed model predictive consensus via the alternating direction method of multipliers." 2012 50th annual Allerton conference on communication, control, and computing (Allerton). IEEE, 2012.
+
+* Piansky, R., Stinchfield, G., Kody, A., Molzahn, D. K., & Watson, J. P. (2024). Long duration battery sizing, siting, and operation under wildfire risk using progressive hedging. Electric Power Systems Research, 235, 110785.
 """
 
 # ╔═╡ 75bdf059-c8ac-4f9c-b023-3c010b4389cb
@@ -209,7 +213,7 @@ Defining the quadratic disagreement function $\varphi(x) = \frac{1}{2} x^T L x$,
 """
 
 # ╔═╡ 46a8121f-f1aa-4d22-8ef9-1d02f957767d
-question_box(md"""What motivates the division by 2 in the quadratic disagreement funcion?""")
+question_box(md"""What motivates the division by 2 in the quadratic disagreement function?""")
 
 # ╔═╡ 85b74a70-a8df-4741-aa1b-d551d0e9bea2
 Foldable(md"Answer...", md"It accounts for the double-counting of undirected edges in the graph.")
@@ -779,7 +783,7 @@ We now consider a __more general form of consensus__, beyond the global consensu
 $\sum_i f_i(x_i)$.
 
 Each local variable $x_i$ contains a subset of components that correspond to certain components of a global variable $z$. We define a mapping $\mathcal{G}(i, j)$ from a local index $(i, j)$ to the corresponding global index $g$, such that
-$(x_i)j = z{\mathcal{G}(i, j)}$.
+$(x_i)_j = z_{\mathcal{G}(i, j)}$.
 
 As a motivating example, consider a __model fitting__ problem. Here, the global variable $z$ represents the full feature vector, while each processor (or node) $i$ holds a subset of the data. The corresponding local variable $x_i$ represents the subset of features in $z$ that appear in block $i$ of the data. This structure is typical in large-scale, high-dimensional datasets that are __sparse__ and __distributed__ across multiple computing nodes.
 
@@ -1143,7 +1147,7 @@ In this chapter, we introduced __consensus__:
 
 * a mechanism for __agreement__ among agents through local communication
 * convergence guaranteed under __connectivity__ and __convexity__
-* enables coordination wtihout centralized control (scalable, robust)
+* enables coordination without centralized control (scalable, robust)
 
 We also introduced __ADMM__, a powerful optimization framework:
 
@@ -1163,20 +1167,20 @@ question_box(md"""Consensus and ADMM rely on cooperation and information exchang
 Foldable(md"Hint...", md"In such _adversarial_ or _strategic_ environments, the assumptions of standard consensus no longer hold. The optimization must be reformulated. It becomes __equilibrium-seeking__ rather than __agreement-seeking__.")
 
 # ╔═╡ Cell order:
-# ╠═462afff0-2ae3-4730-b48e-cf475fc9e14f
-# ╠═195683a4-b093-46af-9fb2-0a8a67d996e8
+# ╟─462afff0-2ae3-4730-b48e-cf475fc9e14f
+# ╟─195683a4-b093-46af-9fb2-0a8a67d996e8
 # ╟─75bdf059-c8ac-4f9c-b023-3c010b4389cb
 # ╟─fe6b8381-edeb-4d0c-87f5-4ecd2b7b9183
 # ╟─44154c9f-8e5e-49a7-b6ec-f465e0769c88
-# ╠═40d12761-6ba5-4f92-aada-a26c9ddf5120
+# ╟─40d12761-6ba5-4f92-aada-a26c9ddf5120
 # ╟─242f3a4c-ad0b-4619-80e6-1f1ee244b6f4
 # ╟─a6c12abf-4303-45bc-99a7-7b55061013d6
 # ╟─cc94ceb2-e01a-4f10-9ee0-d0c906e5f46f
 # ╟─453fb681-6f7b-42f2-9d10-0da7ad5b811c
 # ╟─ee0fbf98-db44-4188-b623-3868a08c02b2
-# ╠═46a8121f-f1aa-4d22-8ef9-1d02f957767d
-# ╠═85b74a70-a8df-4741-aa1b-d551d0e9bea2
-# ╠═524365a7-e799-4c55-acf4-88fcd5a716e2
+# ╟─46a8121f-f1aa-4d22-8ef9-1d02f957767d
+# ╟─85b74a70-a8df-4741-aa1b-d551d0e9bea2
+# ╟─524365a7-e799-4c55-acf4-88fcd5a716e2
 # ╟─3c5d6e70-6f43-11ef-3456-0123456789ab
 # ╟─4d6e7f80-6f43-11ef-4567-0123456789ab
 # ╟─5e7f8090-6f43-11ef-5678-0123456789ab
@@ -1209,15 +1213,15 @@ Foldable(md"Hint...", md"In such _adversarial_ or _strategic_ environments, the 
 # ╟─f75ec743-d448-432f-9511-b2c7a382873c
 # ╟─b9146a5c-2898-4814-935a-6b1bfe7844c4
 # ╟─aec156de-2fce-47bd-b5ad-11e7c62e2a74
-# ╠═af74a473-4f23-45cc-883f-ed6ebe7167cf
+# ╟─af74a473-4f23-45cc-883f-ed6ebe7167cf
 # ╟─3691eca5-604c-4947-8b44-6f0b16798187
 # ╟─6b93441f-e476-4c81-ad56-4df9222ade40
-# ╠═58e61280-9add-40e1-b189-a4750591c804
+# ╟─58e61280-9add-40e1-b189-a4750591c804
 # ╟─01f2ceeb-9498-4c91-bd19-7f506752c005
 # ╟─7fa5a486-0801-4977-8163-5a1fb02d59c9
 # ╟─1de20b3e-5d93-4180-84d8-a2cbf2ab2966
 # ╟─c9484783-f791-4c68-a2e0-89f2a71fe851
-# ╠═373b57ee-68b2-4f2c-a94c-f06173c9ea2b
+# ╟─373b57ee-68b2-4f2c-a94c-f06173c9ea2b
 # ╟─4161b697-441e-4821-ba52-7f244886bd31
 # ╟─df6c20bd-fcb9-458f-a592-39f5a3781aa1
 # ╟─e0141ff8-e681-45cc-b9a8-6908ed332fef
@@ -1232,5 +1236,5 @@ Foldable(md"Hint...", md"In such _adversarial_ or _strategic_ environments, the 
 # ╟─8dc43ea8-6edb-4e8c-9f3a-bbdaf72860fa
 # ╟─eb7fc856-7182-43d3-9d0c-cb7b74260ef8
 # ╟─dd094928-b10a-4269-a5b0-90ec935254fb
-# ╠═58ae03d0-104b-4fc3-8983-b54548852c11
-# ╠═1f24c378-3e4a-42d1-9a07-f3f226bb27b2
+# ╟─58ae03d0-104b-4fc3-8983-b54548852c11
+# ╟─1f24c378-3e4a-42d1-9a07-f3f226bb27b2

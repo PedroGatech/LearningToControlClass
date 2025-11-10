@@ -35,19 +35,20 @@ md"""
 
 # ╔═╡ 8ed6af99-1c5d-4d27-b60d-17d2e6c6ceff
 md"""
-## Outline
+## Chapter Outline
 
-- Transients  
-- Generator swing equations  
-- Inverters  
-- Dynamic load models  
+- Transients and Transient Stability Constrained Optimal Power Flow (TSC-OPF) problem
+- Generator swing equations
+- Inverters
+- Dynamic load models
 """
 
 # ╔═╡ f742f5f3-d9d3-4374-ac9e-17073c3a2f6d
 md"""
-## 3-Bus Network – Economic Dispatch
+# Introduction to Energy Systems
+## Economic Dispatch
 
-We start with a simple economic dispatch (ED) problem on a 3-bus network.
+To illustrate the fundamental concepts and problems in power system, we start with a simple economic dispatch (ED) problem on a 3-bus network.
 
 - Bus 1 load: 50 MW  
 - Bus 3 load: 75 MW  
@@ -61,7 +62,7 @@ We start with a simple economic dispatch (ED) problem on a 3-bus network.
 md"""
 ### Quadratic Program (QP) Formulation of Economic Dispatch
 
-A generic ED formulation:
+The economic dispatch problem can generally be formulated as a quadratic program. A generic ED formulation is:
 
 ```math
 \begin{align}
@@ -87,7 +88,7 @@ where:
 md"""
 ### Exercise: Formulate the ED problem for the 3-bus network
 
-Using the 3-bus system above (with loads and cost data), write down:
+Now let's apply this formulation to our 3-bus example. Using the 3-bus system above (with loads and cost data), write down:
 
 - The decision variables  
 - The objective function  
@@ -99,7 +100,7 @@ Using the 3-bus system above (with loads and cost data), write down:
 md"""
 #### ED formulation for the 3-bus example
 
-A concrete ED formulation is:
+Here is the complete formulation for our 3-bus example:
 
 ```math
 \begin{align}
@@ -110,7 +111,7 @@ A concrete ED formulation is:
 \end{align}
 ```
 
-**Solution:** p_1 = 85 MW, p_2 = 40 MW
+**Solution:** $p_1$ = 85 MW, $p_2$ = 40 MW
 - Total cost: 8*85 + 2*40 = 760\$/hour
 - Gen 2 at maximum capacity (greedy)
 - Gen 1 supplies remaining demand
@@ -120,7 +121,7 @@ A concrete ED formulation is:
 md"""
 ### Discussion Questions
 
-What do you observe from your formulation?
+Before moving forward, let's reflect on what we've learned. What do you observe from your formulation?
 
 - What kind of problem is this (linear, quadratic, etc.)?
 - The power network is a graph -- what type? What is missing here?
@@ -130,6 +131,8 @@ What do you observe from your formulation?
 # ╔═╡ 9d1ea9be-2d7b-4602-8a8e-8426ea31661a
 md"""
 ### What's the Problem?
+
+The simple ED formulation we've seen has several limitations that become apparent when we consider the physical reality of power systems:
 
 - The graph should be directed: power has flow directions
 - Line ratings and safety are ignored in ED
@@ -143,6 +146,8 @@ md"""
 # ╔═╡ 71ba62e6-bcc1-4e9b-91cd-a8860ba0d2b5
 md"""
 ## DC Power Flow
+
+To address these limitations, we extend the ED formulation to include network constraints through DC power flow. This formulation accounts for power flow directions and line limits.
 
 **Data:**
 - Generator set $\mathcal{G}_i$ at bus $i$ (nodal generation)
@@ -159,6 +164,8 @@ md"""
 # ╔═╡ 7b4800c2-133d-4793-95b1-a654a4f19558
 md"""
 ### DC Power Flow Formulation
+
+The DC power flow optimization problem combines economic dispatch with network physics:
 
 ```math
 \begin{align}
@@ -179,6 +186,8 @@ md"""
 md"""
 ### Exercise: Solve DCOPF (solver suggested: Ipopt)
 
+Let's apply the DC power flow formulation to our 3-bus network with line constraints:
+
 ![3-Bus Network with Constraints](https://www.al-roomi.org/multimedia/Power_Flow/3BusSystem/SystemIII/Murty3BusSystem.jpg)
 
 **How did I get the numbers:**
@@ -198,6 +207,8 @@ Consult lecture slides for the solution and detailed analysis.
 md"""
 ### Wrap Up
 
+This section has introduced the fundamentals of static optimal power flow problems including economic dispatch and DC optimal power flow. Key takeaways:
+
 - You will see that without thermal limits, optimal dispatch can overload lines
 - Reference bus is arbitrarily picked by the solver.
 - Real systems are AC (complex voltages/currents) -- much harder. This is just a lightweight intro so we can think about expressing real-world problems as optimization formulations without overburdening ourselves with AC physics, which we will see in transient stability section.
@@ -206,6 +217,8 @@ md"""
 # ╔═╡ 53ab9b31-78aa-49b6-9e24-df47aa80f25a
 md"""
 # Introduction to Transient Stability
+
+While static optimization provides a foundation, real power systems are dynamic. When disturbances occur—faults, switching events, or sudden load changes—the system experiences transients before settling to a new equilibrium. Understanding and controlling these transients is essential for system stability.
 
 ## Transient Dynamics
 """
@@ -232,6 +245,8 @@ When current or voltage changes suddenly — switching, faults, lightning, equip
 md"""
 ## Transients Continued
 
+The relationship between flux and current leads us to the fundamental equations governing inductors:
+
 - For an inductor, the magnetic flux $\Phi$ is proportional to the current:
   
   ```math
@@ -253,7 +268,7 @@ Note that steady-state phasor analysis no longer holds due to the time-varying n
 md"""
 ## Sinusoidal steady state
 
-Assume all quantities have angular frequency $\omega$:
+To connect time-domain transients with frequency-domain analysis, we assume all quantities have angular frequency $\omega$ for sinusoidal steady-state analysis:
 
 ```math
 \begin{align}
@@ -282,7 +297,7 @@ v_L(t) &= \operatorname{Re}\!\left\{ (j\omega L I)\, e^{j\omega t} \right\}.
 md"""
 ## Phasor (frequency-domain) relation
 
-By definition, the **phasor** is the complex amplitude multiplying $e^{j\omega t}$.
+From the time-domain analysis, we can extract the phasor representation. By definition, the **phasor** is the complex amplitude multiplying $e^{j\omega t}$.
 
 From the previous expression,
 
@@ -304,6 +319,8 @@ so the **voltage phasor** is
 # ╔═╡ c1d2e3f4-0894-4340-a18b-72f8e1204445
 md"""
 ## Capacitor law: from time domain to phasor domain
+
+Similar to inductors, capacitors also exhibit transient behavior. Let's derive the capacitor relationships:
 
 **Physical basis:**
 A capacitor stores energy in an **electric field**.
@@ -347,7 +364,7 @@ You could of course derive admittance and impedance for inductors following simi
 md"""
 ## More realistic transmission line model
 
-The voltage $v(x,t)$ and current $i(x,t)$ vary **both** in time and along the line coordinate $x$.
+So far, we've considered lumped circuit elements without considering their position on the line. In real transmission lines, the voltage $v(x,t)$ and current $i(x,t)$ vary **both** in time and along the line coordinate $x$.
 
 Their spatial derivatives represent how these quantities change **per unit length:**
 
@@ -368,6 +385,8 @@ Hence, the full **telegrapher's equations** become:
 # ╔═╡ 111d764c-c6e1-4b79-aad5-31a32fad0719
 md"""
 ## More on realistic transmission line model
+
+Combining the effects of inductance, capacitance, resistance, and conductance, we arrive at the complete telegrapher's equations:
 
 ```math
 \begin{align}
@@ -462,6 +481,8 @@ md"""
 md"""
 ## Dynamic Transient Constraints: (5)--(7)
 
+The dynamic constraints (5)-(7) embed the time-parametrized physics of transient behavior into the optimization problem:
+
 **Eq. (5):**
 - State variables $x$ (rotor angles, speeds, control states). Initial states computed from steady-state solution corresponding to control variables $p$.
 - System dynamics $f(x,y,p)$ — e.g., generator swing equations, Telegrapher equations, or capacitor/inductor transient models.
@@ -476,6 +497,8 @@ md"""
 # ╔═╡ 85c737d7-ace0-4b25-8d63-f35c318ccc5b
 md"""
 ## Dynamic and Transient Constraints: (7)
+
+The final set of constraints ensures that the system remains within safe operating limits throughout the transient:
 
 **(7) Transient limits:**
 
@@ -495,6 +518,8 @@ h(x(t), y(t)) \le 0, \quad \forall t
 md"""
 ## Solution Methods for TSC-OPF
 
+Solving TSCOPF is computationally challenging due to the nonlinear nature of AC power and the embedded differential equations. Several approaches have been developed:
+
 **Indirect (variational) Methods:**
 - Based on Pontryagin's Maximum Principle.
 - Replace the differential equations of dynamics with inequalities that approximate the behavior in steady-state by linearizing into static conditions.
@@ -512,7 +537,7 @@ Instead of having to integrate over time, you get back a static nonlinear optimi
 md"""
 ## Direct Method: Simultaneous Discretization/Constraint Transcription
 
-**Main idea:** Converts the time-dependent diff. eq. into a finite set of algebraic constraints before optimization so transient stability simulator can be reused.
+An approach directly discretizes the differential equations. **Main idea:** Converts the time-dependent diff. eq. into a finite set of algebraic constraints before solving the optimization problem so transient stability simulator can be reused.
 
 **Discretization approach:**
 - The simulation horizon is divided into multiple time steps $t_0, t_1, \dots, t_N$.
@@ -533,7 +558,7 @@ md"""
 md"""
 ## Direct Method: Multiple Shooting
 
-The multiple shooting method divides the simulation horizon into smaller time segments $[t_0,t_1], [t_1,t_2], \dots, [t_{N-1},t_N]$.
+Multiple shooting offers a more numerically stable alternative to simultaneous discretization. The multiple shooting method divides the simulation horizon into smaller time segments $[t_0,t_1], [t_1,t_2], \dots, [t_{N-1},t_N]$.
 
 - Each segment starts from its own initial condition $x_i(t_i)$ and is integrated forward using the diff. eq. $\dot{x}=f(x,y,p),\, 0=g(x,y,p)$ to obtain the predicted final state $\hat{x}_i(t_{i+1})$.
 - Constraint to ensure continuity between segments:
@@ -557,6 +582,7 @@ where $S_i(\cdot)$ is an implicit function that can be numerically integrated ov
 md"""
 ## Trajectory Sensitivity Analysis of TSC-OPF
 
+Both direct methods require gradient information. Sensitivity analysis provides this efficiently. 
 **Purpose:** Quantify how system variables $x(t),y(t)$ changes with respect to small variations in control variables $p$ or initial conditions. Recall that with different control settings $p$, the entire transient trajectory changes and we would need to simulate the dynamics again to see what happens. This is expensive. Sensitivity analysis tells you how the trajectory and stability margins change with small changes in $p: \frac{\partial x}{\partial p}$ without running a new full simulation for every small perturbation.
 
 **Relation to numerical methods:**
@@ -566,6 +592,8 @@ md"""
 # ╔═╡ 946ad231-4ddf-43a3-b2b9-95d502f4b5e9
 md"""
 ## Forward Sensitivity Method
+
+The forward sensitivity method computes gradients by integrating sensitivity equations forward in time:
 
 - Computed by performing a forward integration of the sensitivity equations alongside the original diff. eq. system.
 - Efficient when the number of parameters is small.
@@ -610,7 +638,7 @@ md"""
 md"""
 ## Adjoint Method
 
-Efficient when the number of parameters is large. This only needs one backward integration in time to compute the sensitivities.
+When the number of parameters is large, the forward method becomes expensive. The adjoint method offers an efficient alternative that only needs one backward integration in time to compute the sensitivities.
 
 **Formulation:**
 
@@ -646,7 +674,9 @@ Efficient when the number of parameters is large. This only needs one backward i
 
 # ╔═╡ 2a36f90d-6020-4a12-a1ff-d719214414bb
 md"""
-## Adjoint Method and wrapping up
+## Adjoint Method and wrapping up numerical methods for TSC-OPF and sensitivity analysis
+
+To summarize the adjoint method:
 
 **Pros:**
 - Efficient when the number of parameters is large.
@@ -661,6 +691,8 @@ One can also obtain the gradients by finite differences, which is based on trunc
 # ╔═╡ 214eacc5-0b60-44b8-8a53-9cce369debdd
 md"""
 # Power System History and Modern Power System
+
+To understand why transient stability matters today, we must go back to see how power systems have evolved. The grid's dynamic behavior has fundamentally changed with the integration of renewable energy.
 
 ## The Fuel Era (20th Century)
 
@@ -735,7 +767,7 @@ where $J$ = moment of inertia (depends on mass + geometry), $\omega$ = rotor spe
 md"""
 ## Inverters - Renewables
 
-**Today, renewables can supply 20–40\%+ of real-time demand.**
+The modern power grid faces new challenges with the integration of renewable energy sources. **Today, renewables supply 20–40\%+ of real-time demand.**
 
 Cleaner, cheaper, more sustainable — but dynamics changed.
 
@@ -805,9 +837,11 @@ md"""
 md"""
 # Generator Swing Equations
 
+The generator swing equations are the cornerstone of power system dynamics. They describe how generators respond to power imbalances, connecting mechanical and electrical power through rotational forces.
+
 ## Newton's Second Law
 
-**Linear Version:**
+We begin with the fundamental physics. **Linear Version:**
 
 ```math
 F = ma
@@ -836,7 +870,7 @@ Think torque as the angular equivalent of force.
 md"""
 ## Applied to Generator Dynamics
 
-**Two main torques act on a synchronous generator's rotor:**
+Now we apply Newton's second law to a generator rotor. **There are two main torques acting on a synchronous generator's rotor:**
 
 - Mechanical torque from the turbine (steam, gas, water) pushing the rotor: $T_m$
 - Electromagnetic torque from the stator's magnetic field resisting the rotor (this is the grid "pulling" power out): $T_e$
@@ -860,7 +894,7 @@ where $\omega$: angular speed of rotor (rad/s), $\alpha = \dot{\omega}$: angular
 md"""
 ## From Torque to Power
 
-Recall $P = Fv$ (mechanical power is generated by a force $F$ on a body moving at a velocity $v$). In rotational systems, power is related by torque and angular speed (you can think about it as rotational equivalent as force)
+To connect torque dynamics with electrical power, we relate rotational motion to power. Recall $P = Fv$ (mechanical power is generated by a force $F$ on a body moving at a velocity $v$). In rotational systems, power is related by torque and angular speed (you can think about it as rotational equivalent as force)
 
 **Power = torque × speed:**
 
@@ -885,7 +919,7 @@ This relates how fast the mass is spinning ($\omega$) to the imbalance of power 
 md"""
 ## From Torque to Power (Continued)
 
-But recall that generators operate close to system frequency, so the generators spin at, i.e. the angular velocity is close to that 60 Hz constant. Since the variations are mostly tiny, we can define inertia constant $M = J\omega$
+In practice, generators operate close to system frequency, so the generators spin at an angular velocity that is close to that 60 Hz constant. Since the variations are mostly tiny, we can define inertia constant $M = J\omega$
 
 And we get the generator swing equation:
 
@@ -963,7 +997,7 @@ This is shown by writing the equation as $\dot{\omega} = \frac{P_m - P_e}{M}$. F
 md"""
 ## How Does It Relate to Inverters?
 
-We previously discussed grid-following inverters.
+The swing equation framework extends beyond traditional generators. We previously discussed grid-following inverters.
 
 **Its control law works as:**
 
@@ -977,6 +1011,8 @@ We previously discussed grid-following inverters.
 # ╔═╡ f05940b2-5a30-46dc-8811-5f3d6b0c74a0
 md"""
 ## Grid-forming Inverters
+
+Grid-forming inverters represent a more advanced control paradigm that enables renewables to provide grid support:
 
 - The inverter doesn't blindly follow the grid frequency, it defines its own reference voltage and frequency like a voltage source
 - Let the frequency shift slightly to reflect power imbalance between the renewable generation and the rest of the grid, so other machines (generators) know to ramp up or down
@@ -1029,7 +1065,7 @@ md"""
 md"""
 ## Grid-following inverters - Droop Control
 
-Generators naturally slow down if overloaded, resulting in a drop in frequency (droop). Droop control allows each generator to increase its power output in response, but in proportion to its droop coefficient, so that all generators share the load change fairly.
+Droop control enables automatic power sharing among generators and inverters: generators naturally slow down if overloaded, resulting in a drop in frequency (droop). Droop control allows each generator to increase its power output in response, but in proportion to its droop coefficient, so that all generators share the load change fairly.
 
 Grid-forming inverters are programmed with droop control:
 
@@ -1046,7 +1082,7 @@ Overload leads to frequency drop, and power will rise according to the relations
 md"""
 ## Reactive Power and Voltage Control (Q-V Droop)
 
-Analogous for voltage support:
+Just as frequency droop controls active power balance, voltage droop controls reactive power balance. Analogous for voltage support:
 
 ```math
 V = V_0 - K_q (Q - Q_{\text{set}})
@@ -1070,6 +1106,8 @@ If reactive demand $\uparrow$ (voltage dips), generator/inverter increases react
 md"""
 # Dynamic Load Models
 
+So far, we've focused on generation dynamics. However, loads also exhibit dynamic behavior that significantly impacts system stability. Understanding how loads respond to voltage and frequency changes is crucial for accurate transient analysis.
+
 ## Dynamic Load Models
 """
 
@@ -1077,7 +1115,7 @@ md"""
 md"""
 ## Steady-State Load Models in ACOPF/DCOPF
 
-In optimal power flow (OPF), all quantities are **time-invariant**. $\dot{x} = 0$, $t$ does not appear.
+We begin by reviewing how loads are typically modeled in static optimization. In optimal power flow (OPF), all quantities are **time-invariant**. $\dot{x} = 0$, time parameter $t$ does not appear in the equations.
 
 At each load bus:
 
@@ -1107,7 +1145,7 @@ Q_G - Q_D = 0.
 md"""
 ## Steady-State Load Models Continued
 
-Interpretation of the above model:
+However, the static load model has important limitations. Interpretation of the above model:
 - Loads are fixed regardless of system conditions, or at most respond to nodal voltage.
 - No memory or dynamics -- they change only between static operating points.
 - The OPF represents a single equilibrium snapshot of the system.
@@ -1119,7 +1157,7 @@ Interpretation of the above model:
 md"""
 ## Dynamic Load Models - Induction Motor Model
 
-In dynamic models, the active and reactive power is represented as a function of the past and present voltage magnitude and frequency of the load bus. This type of model is commonly derived from the equivalent circuit of an induction motor.
+Dynamic load models capture the time-dependent response of loads to system disturbances. In dynamic load models, the active and reactive power is represented as a function of the past and present voltage magnitude and frequency of the load bus. This type of model is commonly derived from the equivalent circuit of an induction motor.
 
 Most real-world loads (fans, pumps, compressors) are induction motors.
 
@@ -1135,6 +1173,8 @@ so the load has internal dynamics, unlike static $P_D, Q_D$ in ACOPF.
 # ╔═╡ a1b2c3d4-0894-4340-a18b-72f8e1204490
 md"""
 ## Rotor Dynamics
+
+The key parameter describing induction motor operation is slip, which relates rotor speed to synchronous speed:
 
 **Slip:**
 
@@ -1190,13 +1230,13 @@ IM Modeling is key to capture this nonlinear instability mechanism.
 md"""
 ## How TSC-OPF Prevents Motor Stalling and Voltage Collapse
 
-**In TSC-OPF, dynamics and limits are enforced directly:**
+The transient stability-constrained optimization framework directly addresses these instability mechanisms. **In TSC-OPF, dynamics and limits are enforced directly:**
 
 ```math
 \dot{x} = f(x, y, p), \qquad 0 = g(x, y, p), \qquad h(x(t), y(t)) \le 0, \;\forall t.
 ```
 
-**Dynamic states $x$:**
+**The IM model contributes to the dynamic states $x$ in TSC-OPF:**
 - Induction motor slip $s$, generator rotor angles, inverter controls, etc.
 - Their evolution $f(x,y,p)$ describes how voltages and speeds change after a disturbance.
 - Dynamic constraints ensure stall condition is not reached.
@@ -1216,7 +1256,7 @@ md"""
 md"""
 ## Wrap up (Induction Motor Models)
 
-Controls $p$ are chosen so that f remains stable under disturbances, and the chain of events above is prevented since motor and network dynamics are embedded in $f,g,h$.
+Controls $p$ are chosen so that $f$ remains stable under disturbances, and the chain of events above is prevented since motor and network dynamics are embedded in $f$, $g$, and $h$.
 
 This model is typically used when there's a fast transient or stalling, and the time scale is in milliseconds to second. Useful for short-term voltage stability and transient studies.
 """
@@ -1225,7 +1265,7 @@ This model is typically used when there's a fast transient or stalling, and the 
 md"""
 ## Exponential Recovery Load (ERL): Motivation and Concept
 
-**Goal:** Represent aggregate load behavior during voltage recovery after a disturbance.
+Beyond individual motor dynamics, aggregate load behavior exhibits recovery patterns. **Goal:** Represent aggregate load behavior during voltage recovery after a disturbance.
 
 **Empirical Observation:**
 - When voltage dips, total active and reactive loads drop immediately.
@@ -1249,7 +1289,7 @@ These states evolve according to first-order differential equations, capturing t
 md"""
 ## Adaptive Exponential Recovery Load (ERL) Model
 
-**Mathematical Form:**
+The adaptive ERL model captures voltage-dependent recovery through differential equations. **Mathematical Form:**
 
 ```math
 \begin{aligned}
@@ -1342,8 +1382,8 @@ md"""
 md"""
 ## Why We Go Beyond Steady-State OPF
 
-**The bigger picture:**
-- Power systems are not static networks — they are **dynamic systems.**
+In this chapter, we motivated from the physical principles and operation constraints to demonstrate that power systems are fundamentally dynamic. **The bigger picture:**
+- Even though steady-state analysis is helpful for many purposes and have lower computational burden, power systems are **dynamic systems.**
 - After every change — a fault, switching event, or sudden load or generation shift — voltages, currents, and frequencies evolve continuously before settling.
 - Understanding and controlling these dynamics is essential for keeping the grid stable, secure, and resilient.
 """
@@ -1352,7 +1392,8 @@ md"""
 md"""
 ## Four Building Blocks of System Dynamics
 
-**Four building blocks of system dynamics:**
+Throughout this chapter, we have explored four fundamental components that govern power system dynamics:
+
 - **Transients:** capture the immediate electromagnetic wave response that propagates through the network.
 - **Generator swing equations:** describe how machines adjust speed and angle to balance mechanical and electrical power.
 - **Inverters:** the new generation interface that emulates inertia and voltage support with renewables.
@@ -1363,7 +1404,7 @@ md"""
 md"""
 ## Why We Need Dynamic Optimization (TSC-OPF)
 
-**Why we need dynamic optimization (TSC-OPF):**
+These building blocks come together in transient stability-constrained optimization. **Why we need optimization with system dynamics embedded (TSC-OPF):**
 - Steady-state OPF finds an economical operating point **only at equilibrium.**
 - Transient Stability-Constrained OPF ensures that, even during those dynamic transitions, voltages remain safe, machines stay synchronized, and inverters and loads respond smoothly.
 """

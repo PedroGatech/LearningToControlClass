@@ -74,7 +74,7 @@ md"""
 
 # ╔═╡ 342decc1-43fa-432a-9a9c-757a10ba6a5d
 md"""
-# Part 0: Overview of Lecture 2
+# Overview of Chapter 2
 
 Lecture 2 is the course’s optimization backbone: it makes explicit the idea that most control problems are optimization problems in disguise. 
 We set the common language (gradients/Hessians, KKT systems, globalization) and the “solver toolbox” (penalty, augmented Lagrangian, primal–dual interior-point, SQP) that shows up everywhere else: 
@@ -84,18 +84,16 @@ We set the common language (gradients/Hessians, KKT systems, globalization) and 
 
 and modern differentiable controllers backprop through these solvers. 
 
-The point isn’t to prove every theorem—it’s to give you a reliable recipe for turning a control task into a well-posed QP/NLP and picking/configuring a solver that actually converges.
+The point of this chapter is to give you a reliable recipe for turning a control task into a well-posed QP/NLP and picking/configuring a solver that actually converges.
 
 Positionally, this lecture is the hinge between “dynamics & modeling” (Class 1) and everything that follows: PMP/LQR reframed via KKT and Riccati; nonlinear trajectory optimization and collocation (Class 5); distributed MPC/ADMM (Class 8); GPU-accelerated solves (Class 9); and the learning side—adjoints for Neural DEs (Class 10) and optimization-as-a-layer for PINNs/neural operators (Classes 11–13). 
 
-Concretely, you leave with (i) a map from control formulations to QP/NLP templates, (ii) rules of thumb for choosing between ALM, IPM, and SQP, and (iii) practical globalization (regularization + line search) so demos and projects are reproducible and fast.
-
-### General structure of lecture
+##### General structure of chapter (please refer to lecture slides as needed!)
 
 - **Root finding:** how implicit time-stepping (Backward Euler) turns into solving $r(x)=0$ each step.
-- **Unconstrained minimization:** Newton’s method and why we need *globalization* (regularization + line search).
+- **Unconstrained minimization:** Newton’s method and why we need *globalization strategies* (regularization + line search).
 - **Constrained minimization:** KKT conditions in action for equality constraints.
-- **Interior Point Method:** IPM, augmented lagragnian method.
+- **Interior Point Method:** IPM (check lecture slides for augmented lagrangian method and other penalty methods).
 - **SQP (Sequential Quadratic Programming):** how to reduce a nonlinear program to a sequence of easy QPs.
 """ 
 
@@ -103,50 +101,50 @@ Concretely, you leave with (i) a map from control formulations to QP/NLP templat
 md"""
 # Part I — Unconstrained Minimization as Root Finding
 
-In control, *implicit* simulators and optimizers show up everywhere:
+Many steps in control are solutions of **nonlinear equations** $r(x)=0$:
+- **Implicit simulation (Backward Euler)** each step solves $r(x)=0$.
+- **Newton steps** inside optimizers solve a linearized $r=0$.
+- **Adjoints** are solutions of linear(ized) equations.
 
-- **Implicit time stepping** (e.g., Backward Euler) for stability on stiff dynamics.  
-- **KKT systems** and **Newton steps** inside constrained optimization.  
-- **Adjoints** in learning-to-control are solutions of linearized/adjoint equations.
+We’ll keep one reusable pattern: define a residual $r(x)$, compute its Jacobian ($\partial r(x)$), and choose an iteration that drives $\|r(x_k)\|$ down quickly and reliably. 
 
-All three reduce to solving nonlinear equations of the form $r(x)=0$. This section builds the minimal, reusable toolkit to do that reliably.
+**Going from implicit step to residual**
 
-**Example we use:** one implicit Backward Euler step for $\dot x = f(x)$:
-$x_{n+1} = x_n + h\,f(x_{n+1}) \;\Rightarrow\; r(x) \equiv x_n + h\,f(x) - x = 0.$
+For $\dot x=f(x)$, one Backward Euler step with step size $h$ satisfies
 
-We compare two solvers for $r(x)=0$: a **fixed-point** iteration and **Newton’s method**, and relate what you see to the theory (contraction vs. quadratic convergence). 
+$x_{n+1} = x_n + h\,f(x_{n+1})$
 
-## From differential equations to algebraic equations
+Move everything to the left to get the **residual**
 
-Why not just use explicit Euler? For many control systems (pendulum near upright, contact, power systems) the dynamics can be **stiff**. Stability and larger steps favor **implicit** schemes, but those require solving $r(x)=0$ each step.
+$r(x) \;\equiv\; x_n + h\,f(x) - x,
+\qquad
+\partial r(x) \;=\; h\,J_f(x) - I$
 
-For Backward Euler (BE),
-$r(x) = x_n + h\,f(x) - x,$
-$\partial r(x) = h\,J_f(x) - I,$
-where $J_f$ is the Jacobian of $f$. Good solvers exploit this structure: the residual is “identity minus something small” for small $h$, and the Jacobian carries the physics through $J_f$.
+Two important facts:
+- For small $h$, $\partial r \approx -I$ ⇒ Newton systems are well-conditioned.
+- Note $J_f$ carries physics; using it (rather than a crude approximation) is what makes Newton fast.
 
-## Two algorithms we’ll compare
+We compare two solvers for $r(x)=0$: a **fixed-point** iteration and **Newton’s method**.  
 
-**Fixed-point (Picard)** defines $g(x):=x_n + h\,f(x)$ and iterates
-$x_{k+1}=g(x_k).$
-It converges if $g$ is a **contraction** near the root (intuitively, $h\,\|J_f\|$ small). The local linear rate is controlled by $\rho\!\left(J_g(x^\star)\right)=\rho\!\left(h\,J_f(x^\star)\right)$.
+**Fixed-point (Picard).** Define $g(x)=x_n+h\,f(x)$ and iterate
 
-**Newton’s method** linearizes $r$ and solves for a correction:
-$[\partial r(x_k)]\,\Delta x_k = -\,r(x_k), \quad x_{k+1}=x_k+\Delta x_k,$
-so for BE,
-$\underbrace{(h\,J_f(x_k)-I)}_{\text{BE Jacobian}}\Delta x_k = -\,(x_n+h\,f(x_k)-x_k).$
+$x_{k+1}=g(x_k)$
 
-**Stopping & diagnostics.** We track the **residual norm** $\|r(x_k)\|$ and optionally the **step norm** $\|\Delta x_k\|$. Reporting both avoids “false convergence” when steps stagnate but residuals do not.
+It converges if $g$ is a contraction near the root (intuitively $h\|J_f\|$ small). Rate: **linear**.
 
-## What the theorems (briefly) say
+**Newton’s method.** Linearize $r$ and solve for a correction:
 
-- **Banach fixed-point theorem (Picard):** If $g$ is a contraction on a neighborhood of $x^\star$ (i.e., $\|J_g(x)\|\le q<1$), then $x_{k+1}=g(x_k)$ converges **linearly** to $x^\star$. For BE, $g'(x^\star)=h\,J_f(x^\star)$, so small $h$ or well-scaled $f$ helps.
+$(\partial r(x_k))\,\Delta x_k = -\,r(x_k), \qquad x_{k+1}=x_k+\Delta x_k$
 
-- **Newton’s method:** If $r\in C^2$, $\partial r(x^\star)$ is nonsingular, and $x_0$ is close enough to $x^\star$, then the iterates are **quadratically** convergent:
-$\|x_{k+1}-x^\star\| \le C\,\|x_k-x^\star\|^2.$
-In practice we use **damping / line search** to reach the fast local regime from farther starts.
+Near a solution, the rate is **quadratic**. 
+"""
 
-**Takeaway:** Picard is simple but fragile; Newton has higher per-iteration cost but far fewer iterations and better robustness for implicit steps.
+# ╔═╡ 5e6c4ea7-b283-423c-b9c0-421d53cebc2d
+md"""
+We now will move onto a small example to use root finding on.
+
+**Reminder of the pendulum dynamics:** we use the simple, undamped pendulum with state $x=[\theta,\;v]$ so $\dot{\theta}=v$ and $\dot{v}=-(g/\ell)\sin\theta$, where $g=9.81\,\mathrm{m/s^2}$ and $\ell$ is the length.  
+In vector form, $f(x)=\begin{bmatrix}v\\ -(g/\ell)\sin\theta\end{bmatrix}$, which is what `pendulum_dynamics` returns.
 """
 
 # ╔═╡ 49d5b2e6-eb29-478c-b817-8405d55170b1
@@ -167,13 +165,17 @@ end
 
 # ╔═╡ 950c61b8-f076-4b9a-8970-e5c2841d75f2
 md"""
-## Residual and Jacobian
-
-For the implicit step, define
+For the implicit step, define the residual and jacobian as
 $r(x) = x_n + h\,f(x) - x,$
 $\partial r(x) = \dfrac{\partial}{\partial x}\big(x_n + h\,f(x) - x\big) = h\,J_f(x) - I.$
 """
 
+
+# ╔═╡ 80035b9c-eba6-469c-b138-c6c792979493
+md"""
+Backward Euler converts the implicit update into a root-finding task: the residual $r(x)=x_n+h\,f(x)-x$ measures how far a candidate $x$ misses the equation $x=x_n+h\,f(x)$, and the step is the root $r(x)=0$.  
+Its Jacobian is $\partial r(x)=h\,J_f(x)-I$, which is close to $-I$ when $h$ is small—so Newton steps are well-conditioned while $J_f$ carries the system’s physics.
+"""
 
 # ╔═╡ 92841a2e-bc0d-40f8-8344-a5c398a67275
 begin
@@ -195,25 +197,19 @@ end
 
 # ╔═╡ 8813982c-8c9a-4706-91a8-ebadf9323a4f
 md"""
-## Root solvers
+Now we can move onto to actually implementing a root finding solver 
 
-**Linear-algebra view.** Each Newton update solves
+Each Newton update solves
 $(h\,J_f(x_k)-I)\,\Delta x_k = -\,r(x_k).$
 For small $h$, the matrix is close to $-I$ (well-conditioned); as $h$ grows or the dynamics stiffen, conditioning deteriorates — that is when damping and scaling matter.
-
-
-
+ 
 **Fixed point (Picard)** updates: $x_{k+1} = g(x_k) = x_n + h\,f(x_k)$.  
 Converges locally if \(g\) is a contraction (roughly, small enough \(h\)).
-
-**Newton** uses the true Jacobian \(hJ_f - I\); near a root it is typically quadratic (fewer iterations).
-
-We’ll stop when $\|r(x_k)\|$ is small or a max iteration budget is reached.
+ 
 """
 
 # ╔═╡ 4307a2f3-0378-4282-815b-9ed1fa532e1c
-begin
-    const SAFE = x -> max(x, eps())  # for log-scale plotting later
+begin 
 
     """
     be_step_fixed_point(fun, x_n, h; tol=1e-8, maxiter=30)
@@ -255,7 +251,15 @@ end
 
 # ╔═╡ a45ed97f-f7c1-4ef5-9bc7-654e827f751b
 md"""
-### Controls
+#####  How to use the root finding demo
+
+1. Pick an initial state $x_n=[\theta, v]$ and a step size $h$.
+2. Click **Run** to see $\|r(x_k)\|$ vs iteration (log scale).
+3. Try increasing $h$:
+   - Fixed-point slows down or fails (not a contraction).
+   - Newton stays fast as long as $\partial r=hJ_f-I$ is nonsingular.
+
+**Good starting point to try:** $\theta\in[0.1,0.3]$, $v=0$, $h=0.1$.
 
 Initial state $x_n = [\theta,\, v]$:
 - $\theta$ $(@bind θ0 Slider(-3.0:0.05:3.0, default=0.10, show_value=true))
@@ -297,78 +301,166 @@ begin
 end
 
 
-# ╔═╡ 12c03202-58b2-482e-a65c-b83bc1f6eed1
+# ╔═╡ 56c965c9-5acc-40a5-b1dd-c3a59f0462a9
 md"""
-**What to notice**
+**What you should see:** 
 
-- For small enough \(h\), **fixed point** often converges, but slowly (roughly linear rate).
-- **Newton** typically reaches the tolerance in a handful of steps (near-quadratic rate).
-- Increase \(h\) to see fixed point struggle while Newton remains robust (until the Jacobian becomes ill-conditioned).
+(For $\theta=0.15, v=0.0, h = 0.1$) Newton drives the residual from ~$10^{-3}$ to ~$10^{-11}$ in about 3 iterations, while fixed-point takes $~15$ iterations to reach only ~$10^{-8}$. The steep, almost vertical drop of the orange curve (log scale) is the signature of **near-quadratic** convergence; the blue curve decays roughly linearly and can stagnate. Because Newton uses the true Jacobian $h J_f - I$, this advantage usually grows as $h$ (or stiffness) increases.  
 """
+
+# ╔═╡ af82d16d-c649-461b-856a-42355517d9f4
+md"""
+##### From roots to minima (part II of chapter)
+
+Minimization often reduces to **root finding** on the gradient:
+
+$\min_x f(x)\quad \Longleftrightarrow \quad \nabla f(x)=0$
+
+The next section of this chapter takes the same Newton machinery you just used on $r=0$ and applies it to $\nabla f=0$, then adds **globalization** (regularization + line search) to make it behave well away from the optimum.
+"""
+
 
 # ╔═╡ 662d58d7-4c9c-4699-a846-cb6070c507d9
 md"""
 # Part II - Unconstrained Minimization — Newton, Regularization, and Line Search
 
-**Learning goals**
-- Apply Newton’s method to a nonconvex scalar objective.
-- See why plain Newton can **increase** the objective (negative curvature).
-- Stabilize Newton with **Hessian regularization**.
-- Add **Armijo backtracking** to get robust progress.
+In this next part we will apply Newton's method to a nonconvex scalar objective. We will see that that plain Newton (i.e without additional safeguards) can **increase** the objective (negative curvature). To handle this we will go over a technique to stabilize newton's method using **Hessian regularization**. Finally to assure robust progress throughout the solution process and avoiding oscillations, we will go also show how to add **Armijo backtracking**.
 
-We will use the toy function
+We will work with a toy scalar function which has multiple critical points (minima/maxima) which makes it a nice testbed to show where Newton can go wrong. The function is  
+
 $f(x) = x^4 + x^3 - x^2 - x$
-which has both minima and maxima, so it’s perfect to show where Newton can go wrong.
+
+Before doing anything related to newton's method, let's just plot the actual function we have and visualize it! 
 """
 
 # ╔═╡ 27760607-b740-47dc-a810-c332baa2bd2d
 begin
-    #### Problem definition (scalar) ####
+ 
     f(x::Real)  = x^4 + x^3 - x^2 - x
     ∇f(x::Real) = 4x^3 + 3x^2 - 2x - 1
     ∇²f(x::Real)= 12x^2 + 6x - 2
 
     grad_f(x) = ∇f(x)
     hess_f(x) = ∇²f(x)
-
-    #### Plot helpers ####
+	
     function plot_fx(; xrange=(-1.75, 1.25), npts=1000, title="Objective")
         xs = range(xrange[1], xrange[2], length=npts)
-        plt.plot(xs, f.(xs), lw=2, label="f(x)", xlabel="x", ylabel="f(x)", title=title)
+        ys = f.(xs)
+        ylo, yhi = extrema(ys)
+        pad = 0.05*(yhi - ylo + eps())  # small padding
+        plt.plot(xs, ys;
+            lw=2, label="f(x)", xlabel="x", ylabel="f(x)", title=title,
+            xlims=xrange, ylims=(ylo - pad, yhi + pad)
+        )
     end
 
-    function plot_trace(xhist; xrange=(-1.75, 1.25), npts=1000, title="")
+    function plot_trace(xhist; xrange=(-1.75, 1.25), npts=1000, title="",
+                        show_first_iter::Bool=true, show_first_model::Bool=true)
+
         xs = range(xrange[1], xrange[2], length=npts)
-        p = plt.plot(xs, f.(xs), lw=2, label="f(x)", xlabel="x", ylabel="f(x)", title=title)
-        plt.scatter!(p, xhist, f.(xhist), marker=:x, ms=7, label="iterates")
+        ys = f.(xs)
+        ylo, yhi = extrema(ys)
+        pad = 0.05*(yhi - ylo + eps())
+
+        p = plt.plot(xs, ys;
+            lw=2, label="f(x)", xlabel="x", ylabel="f(x)", title=title,
+            xlims=xrange, ylims=(ylo - pad, yhi + pad)
+        )
+ 
+        x_in = [x for x in xhist if isfinite(x) && xrange[1] ≤ x ≤ xrange[2]]
+        if !isempty(x_in)
+            plt.scatter!(p, x_in, f.(x_in); marker=:x, ms=7, label="iterates")
+        end
+ 
+        if show_first_iter && length(xhist) ≥ 2
+            x0, x1 = xhist[1], xhist[2]
+            if isfinite(x0) && isfinite(x1) &&
+               (xrange[1] ≤ x0 ≤ xrange[2]) && (xrange[1] ≤ x1 ≤ xrange[2]) &&
+               isfinite(f(x0)) && isfinite(f(x1))
+                plt.plot!(p, [x0, x1], [f(x0), f(x1)];
+                    lw=2, ls=:dash, label="first step x₀ → x₁"
+                )
+                plt.scatter!(p, [x1], [f(x1)]; marker=:diamond, ms=8, label="x₁")
+            end
+        end
+ 
+        if show_first_model && !isempty(xhist) && isfinite(xhist[1])
+            x0 = xhist[1]
+            g0, H0 = grad_f(x0), hess_f(x0)
+            if isfinite(g0) && isfinite(H0)
+                m0(x) = f(x0) + g0*(x - x0) + 0.5*H0*(x - x0)^2
+                width = 0.75
+                xs_loc = range(max(xrange[1], x0 - width), min(xrange[2], x0 + width), length=250)
+                if length(xs_loc) > 1
+                    plt.plot!(p, xs_loc, m0.(xs_loc); ls=:dot, lw=2, label="quadratic model @ x₀")
+                end
+            end
+        end
+
         return p
     end
 end
 
-
-# ╔═╡ 7765e032-c520-4f97-b877-0d479f383f28
-md"""
-## 1) Inspect the objective
-
-Below is the graph of \(f(x)\). The multiple critical points (max/min) make it a nice testbed for Newton.
-"""
-
 # ╔═╡ a098a49b-a368-4929-824c-385a06b88696
 plot_fx(title="f(x) = x^4 + x^3 - x^2 - x")
 
+# ╔═╡ 17ac372e-87e6-4649-ba9d-1df1cdb7b55b
+md"""
+We can see that this function has a global minima on the right side of the plot close to $x_1\approx0.6$ whilst it has a local minima around $x_1\approx-1$. This is a perfect example as we can analyze what happens when we start in the basin of attraction of the local minima on the left. Now let's go over how the newton method should be implemented
+"""
+
 # ╔═╡ a62f1b6a-87fe-4401-bc13-42166ca0e129
 md"""
-## 2) Plain Newton (no safeguards)
+#### Plain Newton update
 
-Newton update:
+We want a **stationary point** of $f$, i.e. solve
 
+```math
+\nabla f(x) = 0
+```
 
-$x_{k+1} = x_k - \frac{\nabla f(x_k)}{\nabla^2 f(x_k)}$.
+Newton’s method does this by **linearizing the gradient** at the current point ($x_k$):
 
+```math
+\nabla f(x) \approx \nabla f(x_k) + \nabla^2 f(x_k)\,(x - x_k)
+```
 
-If $\nabla^2 f(x_k) < 0$, the step **ascends** along \(f\).
+Setting this approximation to zero and solving for (x) gives the update
 
-Use the sliders to choose a start and number of iterations.
+```math
+x_{k+1} = x_k - \big[\nabla^2 f(x_k)\big]^{-1}\,\nabla f(x_k)
+```
+
+In **one dimension**, the Hessian is just the scalar ($f''(x_k)$), so
+
+```math
+\boxed{\,x_{k+1} = x_k - \dfrac{f'(x_k)}{f''(x_k)}\,}
+```
+
+**Quadratic-model view (same update).** Around (x_k), approximate (f) by the quadratic
+
+```math
+m_k(s)= f(x_k)+ \nabla f(x_k)\, s + \tfrac12\, \nabla^2 f(x_k)\, s^2 .
+```
+
+Minimizing ($m_k$) w.r.t. ($s$) gives ($s_k = -\nabla f(x_k)/\nabla^2 f(x_k)$) (1D), hence the same update ($x_{k+1}=x_k+s_k$).
+This reveals a key fact:
+
+* If ($f''(x_k) > 0$) (positive curvature), then ($s_k$) is a **descent direction** and the step tends to **decrease** (f).
+* If ($f''(x_k) < 0$) (negative curvature), the local quadratic is **concave** and the same formula points **uphill**—plain Newton can **increase** (f).
+
+In higher dimensions the descent test is
+
+```math
+\nabla f(x_k)^\top \big[\nabla^2 f(x_k)\big]^{-1}\nabla f(x_k) > 0,
+```
+
+which holds when the Hessian is positive definite; if the Hessian is indefinite/negative, Newton’s direction need not be descent.
+""" 
+
+# ╔═╡ be41026f-cb28-4647-8db6-1d243739f444
+md"""
+The following code implements an iterative optimization algorithm using Newton for our 1D nonconvex scalar function (no safeguards yet)
 """
 
 # ╔═╡ b2ddc048-4942-43bc-8faa-1921062d8c9c
@@ -401,9 +493,16 @@ begin
 end
 
 
+# ╔═╡ 1ffa2941-619b-400a-ba0f-56baa6ee7f59
+md"""
+The first slider corresponds to the initial starting pointer iterate for the newton's method. The second slider corresponds to the number of iterations we should run the algorithm for.
+
+First test out the algorithm with an initial start position at $x=-1.5$ and $5$ iterations. The algorithm will converge to a local minima at $-1$.
+"""
+
 # ╔═╡ 6fd7a753-6db7-4c37-9e22-dc63dd3072c8
 begin
-    @bind x0_plain PlutoUI.Slider(-1.75:0.01:1.1, default=-1.50, show_value=true)
+    @bind x0_plain PlutoUI.Slider(-1.75:0.01:0.5, default=-1.50, show_value=true)
 end
 
 
@@ -415,19 +514,23 @@ end
 # ╔═╡ 096ebc95-f133-4ca3-b942-cf735faaa42b
 begin
     xhist_plain_1 = newton_optimize_plain(x0_plain; maxiters=iters_plain)
-    plot_trace(xhist_plain_1; title = "Plain Newton from x₀ = $(round(x0_plain,digits=3)) and iters = $(iters_plain)")
+    plot_trace(
+        xhist_plain_1;
+        title = "Plain Newton from x₀ = $(round(x0_plain,digits=3)) and iters = $(iters_plain))",
+        show_first_iter = true,
+        show_first_model = true,   # set false if you only want the step segment
+    )
 end
-
 
 # ╔═╡ fdf41c76-4405-49e0-abfa-5c5193de99f4
 md"""
-## 3) Globalization: Regularization + Armijo backtracking
+To avoid issues with newton, we add globalization strategies which include regularization and Armijo backtracking
 
 Two simple fixes:
 
-1. **Regularization:** If $\nabla^2 f(x_k)\le 0$, replace it by $\nabla^2 f(x_k) + \beta $ with $\beta>0$ (LM-style), so the step is a **descent** direction.
-2. **Armijo line search:** Scale the step by \(\alpha \in (0,1]\) until
-$f(x_k+\alpha\Delta x) \le f(x_k) + b\,\alpha\,\nabla f(x_k)\,\Delta x$,
+1. **Regularization:** If $\nabla^2 f(x_k)\le 0$, replace it by $\nabla^2 f(x_k) + \beta $ with $\beta>0$, so the step is a **descent** direction.
+2. **Armijo line search:** Scale the step by $\alpha \in (0,1]$ until
+$f(x_k+\alpha\Delta x) \le f(x_k) + b\,\alpha\,\nabla f(x_k)\,\Delta x$
 with typical $b=10^{-4}$, $c=0.5$ for backtracking.
 
 We’ll expose both as toggles.
@@ -436,7 +539,8 @@ We’ll expose both as toggles.
 
 # ╔═╡ d259c1b8-3716-4f80-b462-3b3daebb444d
 md"""
-### Controls
+#### Controls
+Use the controls to find settings where it's clear that the left/last plot is the best. I.e the use of regularization and backtracking ensures we move towards the true optimal minima with no over-shooting due to backtracking. A good example is a starting point of roughly -0.36 and $\beta_0=1$ and $c=0.5$. In that setting we can see that both only the plain newton cannot solve to optimality. The pure regularized version has oscillation as it overshoots the minima. On the other hand the regularized and line search implementation is able to find the global minima efficiently.
 
 **Start x₀:** $(@bind x0_cmp Slider(-1.5:0.01:0.75, default=0.00, show_value=true))  
 **Iterations:** $(@bind iters_cmp Slider(1:40, default=10, show_value=true))
@@ -455,355 +559,505 @@ md"""
 """
 
 
+# ╔═╡ 76c51e32-bd0e-4e72-8c47-64352da13d3e
+md"""
+If you are interested in seeing how the plotting works, open the code for the cell below.
+"""
+
 # ╔═╡ e012d7e0-0181-49d0-bb78-995378c4f87a
 md"""
-## 4) Takeaways
+Here are the main takeaways for part II.
 
 - **Plain Newton** is fast **if** you’re in a nice region and the Hessian is positive.
 - **Regularization** turns the Newton step into a descent direction when curvature is negative or near-singular.
 - **Armijo backtracking** fixes overshooting and makes progress predictable without hand-tuning step sizes.
 - These building blocks generalize to higher-dimensional problems and constrained KKT systems (next section of the tutorial).
-
-**Further experiments**
-- Change the objective (keep the same drivers).
-- Try different Armijo parameters $b, c$.
-- Visualize **$|\nabla f(x_k)|$** vs iteration to see convergence.
 """
-
-
-# ╔═╡ 0a3eb748-fab3-4f8b-993e-2246c32fb6aa
-
-
-# ╔═╡ 3989b8e1-ac1f-430d-9d72-e298ba7ae0ca
-
-
-# ╔═╡ e466ffb2-fcc8-4c3b-9059-7fd68a4265f2
-
-
-# ╔═╡ 09a301c7-c1f4-4890-afe9-fbc1d7c3b905
-
-
-# ╔═╡ 53020b8a-4948-467a-8629-bef9496d0374
-
 
 # ╔═╡ 26c887ce-d95b-4e38-9717-e119de0e80ca
 md"""
-# Part III - Constrained Optimization (KKT) 
+## Part III — Constrained Optimization (KKT)
 
-#### Setup (equality constraints)
+We now move from unconstrained to **equality-constrained** minimization, then note what changes for **inequalities**.
+
+##### 1) Problem and picture
+
 We solve
-```math
-\min_{x\in\mathbb{R}^n} f(x) \quad \text{s.t.}\ C(x)=0,\qquad C:\mathbb{R}^n\to\mathbb{R}^m.
-```
-
-**Geometric picture.** At an optimum on the manifold `C(x)=0`, the gradient is orthogonal to the tangent space:
 
 ```math
-\nabla f(x^\star)\ \perp\ \mathcal{T}_{x^\star}=\{p:\ J_C(x^\star)p=0\}.
+\min_{x\in\mathbb{R}^n} f(x)\quad\text{s.t.}\quad C(x)=0,\qquad C:\mathbb{R}^n\to\mathbb{R}^m.
 ```
 
-Equivalently, the gradient is a combination of the constraint normals:
+**Geometry.** At an optimal $x^\star$ on the manifold $C(x)=0$, the gradient must be orthogonal to all feasible directions (the **tangent space**). Equivalently, $\nabla f(x^\star)$ lies in the span of the constraint normals:
 
 ```math
-\nabla f(x^\star)+J_C(x^\star)^{\!T}\lambda^\star=0,\qquad C(x^\star)=0.
+\nabla f(x^\star) + J_C(x^\star)^{\!T}\lambda^\star = 0, \qquad C(x^\star)=0.
 ```
 
-**Lagrangian.** Define $L(x,\lambda)=f(x)+\lambda^{\!T}C(x)$.
+This is the KKT stationarity + feasibility for equalities. (Under a mild **constraint qualification** like LICQ, these conditions are necessary at a local minimizer.)
+
+**Lagrangian.** $L(x,\lambda)=f(x)+\lambda^{T}C(x)$. 
+
+KKT (equalities only): $\nabla_x L(x,\lambda)=0,\ C(x)=0$. 
 """
+ 
 
-# ╔═╡ a1b7f614-710a-4ce8-815b-2f94754088c4
-md"""
-#### From conditions to a solver (Newton/SQP on the KKT system)
+# ╔═╡ 52718e0b-f958-445e-b9b6-9e5baf09e81a
+md""" 
+##### 2) Where the KKT linear system comes from 
 
-Linearizing feasibility and stationarity gives the **saddle-point** (KKT) system:
+At iterate $(x,\lambda)$, take a Newton step $(\Delta x,\Delta\lambda)$ by **linearizing** the two KKT equations:
+
+* **Feasibility** $C(x+\Delta x)\approx C(x)+J_C(x)\,\Delta x=0 \;\Rightarrow\; J_C(x)\,\Delta x=-C(x)$.
+* **Stationarity** $\nabla_x L(x+\Delta x,\lambda+\Delta\lambda)\approx \nabla_x L(x,\lambda)+H\,\Delta x+J_C(x)^{T}\Delta\lambda=0$,
+
+where $H=\nabla^2_{xx}L(x,\lambda)$.
+
+with the (approximate) **Lagrangian Hessian**
+
+```math
+H \;\approx\; \nabla^2 f(x)\;+\;\sum_{i=1}^m \lambda_i\,\nabla^2 C_i(x).
+```
+
+Stacking these two linearized equations gives the **saddle-point (KKT) system**:
 
 ```math
 \begin{bmatrix}
-H & J_C(x)^{\!T} \\
-J_C(x) & 0
+H & J_C^{\!T}\\
+J_C & 0
 \end{bmatrix}
 \begin{bmatrix}\Delta x\\ \Delta\lambda\end{bmatrix}
 =-
 \begin{bmatrix}
-\nabla f(x)+J_C(x)^{\!T}\lambda\\
+\nabla f(x)+J_C^{\!T}\lambda\\
 C(x)
-\end{bmatrix},
-\qquad
-H \approx \nabla^2 f(x) + \sum_{i=1}^m \lambda_i\,\nabla^2 C_i(x).
+\end{bmatrix}.
 ```
 
-Two common choices for `H`:
+This is exactly the equality-constrained Newton step (feasible or infeasible start variants differ only in the right-hand side).
 
-* **Full Newton (Hessian of the Lagrangian):** as written above (fast near a solution).
-* **Gauss–Newton/SQP:** drop the constraint-curvature term so $H\approx\nabla^2 f(x)$ (often more robust far from the solution).
+**Two common (H) choices.**
 
-> Practical: this system is symmetric indefinite; block elimination (Schur complement) and sparse factorizations are standard.
+* **Full Newton (Lagrangian Hessian):** as above — best local rate near a solution.
+* **Gauss–Newton/SQP:** drop the constraint-curvature term, taking ($H\approx\nabla^2 f(x)$) which is often more robust far from the solution.
+
+**How we actually solve it.** The matrix is symmetric indefinite. Standard tactics:
+
+* **Block elimination (Schur complement):** if ($H$) is nonsingular,
+
+```math
+(J_C H^{-1}J_C^{\!T})\,\Delta\lambda \;=\; J_C H^{-1}(\nabla f+J_C^{\!T}\lambda)+C,
+\quad\text{then back-solve for }\Delta x.
+```
+
+* **LDLᵀ (symmetric-indefinite) factorization** for sparse problems.
 """
 
-# ╔═╡ 6fd82e73-6fef-4f7f-b291-f94cbac0d268
+# ╔═╡ edce5b27-9af8-4010-9d9f-60681b2f427c
 md"""
-#### Inequality constraints (KKT, first-order)
+##### 3) Inequalities: what changes (just the essentials)
 
-For $c(x)\ge 0$,
+For $c(x)\ge 0$ (component-wise), first-order KKT add **sign** and **complementarity**:
 
 ```math
 \begin{aligned}
-&\text{Stationarity:} && \nabla f(x)-J_c(x)^{\!T}\lambda=0,\\
-&\text{Primal feasibility:} && c(x)\ge 0,\\
-&\text{Dual feasibility:} && \lambda\ge 0,\\
-&\text{Complementarity:} && \lambda^{\!T}c(x)=0\quad(\lambda_i\,c_i(x)=0\ \forall i).
+&\text{Stationarity:}& &\nabla f(x)-J_c(x)^{\!T}\lambda=0,\\
+&\text{Primal feasibility:}& &c(x)\ge 0,\\
+&\text{Dual feasibility:}& &\lambda\ge 0,\\
+&\text{Complementarity:}& &\lambda^{\!T}c(x)=0\quad(\lambda_i\,c_i(x)=0).
 \end{aligned}
 ```
 
-**Interpretation.** Active constraints ($c_i(x)=0$) may carry nonzero multipliers; inactive ones ($c_i(x)>0$) have $\lambda_i=0$.
+**Interpretation.** If constraint $i$ is **active** $(c_i(x)=0)$, its multiplier may be positive; if **inactive** $(c_i(x)>0)$, then $\lambda_i=0$.
+
 """
 
-# ╔═╡ 52718e0b-f958-445e-b9b6-9e5baf09e81a
-
-
-# ╔═╡ edce5b27-9af8-4010-9d9f-60681b2f427c
-
-
-# ╔═╡ c139ccc9-0355-4c41-8d82-0c97fef50900
-
-
-# ╔═╡ 43c5ccb9-d51e-4d73-b7be-f8b9dd599130
+# ╔═╡ 4a3bdacd-bc17-4b10-bbed-6d34f0531d60
 md"""
-# Part III Code - Equality Constrained Minimization (KKT) 
+##### Small example
 
-We solve
+We will now do a tiny code example of equality-constrained problem and solve it with a Newton/SQP-style **KKT step** plus a simple **merit-function line search**. The goal is to see the geometry and the update.
 
+We solve a **single equality constraint** problem in $\mathbb{R}^2$:
 ```math
-\min_x\; f(x) \quad \text{s.t.}\; c(x)=0
+\min_x\; f(x)\qquad \text{s.t. } c(x)=0.
 ```
 
-with one equality constraint. The **KKT system** for a Newton/SQP step is
+We’ll use a convex quadratic objective and a curved constraint:
+
+```math
+f(x)=\tfrac12(x-x_\star)^\top Q(x-x_\star),\qquad
+c(x)=x_1^2+2x_1-x_2.
+```
+
+A Newton/SQP step ($\Delta x,\Delta\lambda$) solves the **KKT system**
 
 ```math
 \begin{bmatrix} H & J^\top \\ J & 0 \end{bmatrix}
 \begin{bmatrix} \Delta x \\ \Delta \lambda \end{bmatrix}
-= - \begin{bmatrix} \nabla f(x)+J^\top \lambda \\ c(x) \end{bmatrix},
-\quad J=\nabla c(x)^\top,\; H\approx\nabla^2\!L(x,\lambda).
+=-
+\begin{bmatrix} \nabla f(x)+J^\top\lambda \\ c(x) \end{bmatrix},
+\quad J=\nabla c(x)^\top,\ \ H\approx\nabla^2\!L(x,\lambda).
 ```
 
-We'll compare:
+We’ll compare two (H) choices:
 
-* **Gauss–Newton/SQP**: $H=\nabla^2 f$ (drop constraint curvature) ⇒ robust PD top-left.
-* **Full**: $H=\nabla^2 f + \lambda \nabla^2 c$.
+* **Gauss–Newton/SQP:** ($H=\nabla^2 f$) (drop constraint curvature).
+* **Full:** ($H=\nabla^2 f + \lambda,\nabla^2 c$).
 
-We’ll also use a simple merit function $\phi(x)=f(x)+\frac{\rho}{2}\,c(x)^2$ with Armijo backtracking.
+To globalize we use the **merit** ($\phi(x)=f(x)+\tfrac{\rho}{2}c(x)^2$ with Armijo backtracking.
 """
 
-# ╔═╡ e0a7f431-61dd-4df2-b53c-d81c7a302baf
+# ╔═╡ 20fa9f12-ef19-482a-be83-feaed95109c3
 begin
-    # === Objective & constraint (KKT section) ===
-    Q_kkt     = Diagonal([0.5, 1.0])
-    xstar_kkt = [1.0, 0.0]
+	# objective: bowl centered at x⋆
+	Q_kkt     = Diagonal([0.5, 1.0])
+	xstar_kkt = [1.0, 0.0]
 
-    # Scalar objective (use dot() to ensure a Float64, not 1×1)
-    f_kkt(x::AbstractVector)      = 0.5 * dot(x .- xstar_kkt, Q_kkt * (x .- xstar_kkt))
-    ∇f_kkt(x::AbstractVector)     = Q_kkt * (x .- xstar_kkt)
-    ∇²f_kkt(::AbstractVector)     = Q_kkt  # constant SPD 2×2
+	f_kkt(x::AbstractVector)  = 0.5 * dot(x .- xstar_kkt, Q_kkt * (x .- xstar_kkt))
+	∇f_kkt(x::AbstractVector) = Q_kkt * (x .- xstar_kkt)
+	∇²f_kkt(::AbstractVector) = Q_kkt  # constant SPD
 
-    # One equality constraint: c(x) = x1^2 + 2x1 - x2
-    c_kkt(x::AbstractVector)      = x[1]^2 + 2x[1] - x[2]
-    ∇c_kkt(x::AbstractVector)     = [2x[1] + 2.0, -1.0]                # length-2
-    ∇²c_kkt(::AbstractVector)     = [2.0 0.0; 0.0 0.0]                 # constant 2×2
+	# one equality constraint: x₂ = x₁² + 2x₁
+	c_kkt(x::AbstractVector)  = x[1]^2 + 2x[1] - x[2]
+	∇c_kkt(x::AbstractVector) = [2x[1] + 2.0, -1.0]
+	∇²c_kkt(::AbstractVector) = [2.0 0.0; 0.0 0.0]
 end
 
-
-
-# ╔═╡ 3e3d6e18-f922-4e91-8eaf-bc26b8f91757
+# ╔═╡ 6c560afb-921d-4f34-b77b-a31e37b7d571
 begin
-    function landscape_plot_kkt(; xlim=(-4,4), ylim=(-4,4), nsamp=120, show_colorbar=false)
+	ϕ_kkt(x; ρ=1.0)  = f_kkt(x) + 0.5*ρ*c_kkt(x)^2
+	∇ϕ_kkt(x; ρ=1.0) = ∇f_kkt(x) .+ ρ*c_kkt(x).*∇c_kkt(x)
+
+	"""
+	kkt_step(x, λ; method=:gn, δ=1e-8)
+
+	Build and solve the 3×3 KKT system:
+	  [ H  J';  J  0 ] [Δx; Δλ] = -[ ∇f + J'λ;  c ]
+	with H = ∇²f (method=:gn) or H = ∇²f + λ∇²c (method=:full).
+	δ adds a tiny ridge to H for numerical robustness.
+	"""
+	function kkt_step(x::AbstractVector, λ::Real; method::Symbol=:gn, δ::Float64=1e-8)
+		H = Matrix(∇²f_kkt(x))
+		if method === :full
+			H .+= λ .* ∇²c_kkt(x)
+		end
+		@inbounds for i in 1:2; H[i,i] += δ; end
+		J = reshape(∇c_kkt(x), 1, :)             # 1×2
+		rhs = -vcat(∇f_kkt(x) .+ λ .* ∇c_kkt(x), c_kkt(x))
+		K   = [H J'; J 0.0]
+		Δ   = try
+			K \ rhs
+		catch
+			pinv(K) * rhs
+		end
+		return Δ[1:2], Δ[3]
+	end
+
+	"""
+	kkt_solve(x0, λ0; iters=8, method=:gn, linesearch=true, ρ=1.0, b=1e-4, cdec=0.5)
+
+	A few KKT iterations with Armijo on ϕ. Returns (X, Λ) where
+	X ∈ ℝ^{2×(iters+1)} collects iterates.
+	"""
+	function kkt_solve(x0, λ0; iters=8, method=:gn, linesearch=true, ρ=1.0, b=1e-4, cdec=0.5)
+		x = copy(x0); λ = float(λ0)
+		X = reshape(x, 2, 1); Λ = [λ]
+		for _ in 1:iters
+			Δx, Δλ = kkt_step(x, λ; method=method)
+
+			# Armijo w/ descent fallback on φ
+			α = 1.0
+			if linesearch
+				φx   = ϕ_kkt(x; ρ=ρ)
+				gφ   = ∇ϕ_kkt(x; ρ=ρ)
+				slope = dot(gφ, Δx)
+				if !(isfinite(slope)) || slope ≥ 0
+					Δx .= -gφ
+					Δλ  = 0.0
+					slope = -dot(gφ, gφ)
+				end
+				for _ in 1:20
+					if ϕ_kkt(x .+ α .* Δx; ρ=ρ) ≤ φx + b*α*slope
+						break
+					end
+					α *= cdec
+				end
+			end
+
+			x .+= α .* Δx
+			λ  += α * Δλ
+			X   = hcat(X, x); push!(Λ, λ)
+		end
+		return X, Λ
+	end
+end 
+
+# ╔═╡ 4d8533ef-be1b-45c9-acaf-ce278c3e5db7
+begin
+    # Find constrained minimizer of f along the curve x₂ = x₁² + 2x₁ (within the window)
+    function constrained_star_kkt(; xlim=(-4,4), ylim=(-4,4))
+        xs = range(xlim[1], xlim[2], length=1201)
+        ys = @. xs^2 + 2xs
+        mask = (ys .>= ylim[1]) .& (ys .<= ylim[2])
+        xs_in = collect(xs)[mask]; ys_in = ys[mask]
+        if isempty(xs_in)      # fallback if curve is off-screen
+            xs_in = collect(xs); ys_in = ys
+        end
+        vals = [ f_kkt([x,y]) for (x,y) in zip(xs_in, ys_in) ]
+        i = argmin(vals)
+        return xs_in[i], ys_in[i]
+    end
+
+    function landscape_plot_kkt(; xlim=(-4,4), ylim=(-4,4), nsamp=121)
         xs = range(xlim[1], xlim[2], length=nsamp)
         ys = range(ylim[1], ylim[2], length=nsamp)
-        Z  = [ f_kkt([x,y]) for x in xs, y in ys ]
+        Z  = [ f_kkt([x,y]) for y in ys, x in xs ]
 
         p = plt.contour(xs, ys, Z;
-                        levels=18,
-                        colorbar=show_colorbar,
-                        xlabel="x₁", ylabel="x₂",
-                        title="Objective contours & constraint (c(x)=0)",
-                        legend=:topleft,
-                        aspect_ratio=:equal,
-                        xlims=(xlim[1], xlim[2]),
-                        ylims=(ylim[1], ylim[2]))
+            levels=18, xlabel="x₁", ylabel="x₂",
+            title="KKT path on objective contours (c(x)=0)",
+            legend=:bottomright, aspect_ratio=:equal,
+            xlims=(xlim[1], xlim[2]), ylims=(ylim[1], ylim[2]))
 
-        xc = collect(xs)
-        yc = @. xc^2 + 2xc
+        # constraint curve
+        xc = collect(xs); yc = @. xc^2 + 2xc
         plt.plot!(p, xc, yc; lw=2, label="c(x)=0")
-        plt.scatter!(p, [xstar_kkt[1]], [xstar_kkt[2]]; marker=:star5, ms=8, label="x⋆")
+ 
 
-        plt.xlims!(p, (xlim[1], xlim[2]))
-        plt.ylims!(p, (ylim[1], ylim[2]))
+        xcs, ycs = constrained_star_kkt(xlim=xlim, ylim=ylim)
+        plt.scatter!(p, [xcs], [ycs];
+                     marker=:star5, ms=9, label="constrained x̂")
+
         return p
     end
 
-    plot_path_kkt!(p, X) = begin
-        plt.plot!(p, X[1,:], X[2,:]; marker=:x, ms=6, lw=1.5, label="iterates")
-        plt.xlims!(p, (-4,4)); plt.ylims!(p, (-4,4))
-        p
-    end
+   # Path overlay: X's for iterates, star for the current x0 from sliders
+	plot_path_kkt!(p, X; x0::AbstractVector = X[:,1]) = begin
+	    # iterates
+	    plt.plot!(p, X[1,:], X[2,:]; marker=:x, ms=6, lw=1.5, label="iterates") 
+	    plt.scatter!(p, [x0[1]], [x0[2]];  marker=:star5, ms=9, label="start x₀")
+	    plt.xlims!(p, (-4,4)); plt.ylims!(p, (-4,4))
+	    p
+	end
+
 end
 
 
-
-# ╔═╡ 31407c3f-8f3d-4dcc-bc49-cedd8ca14013
-begin
-    # === KKT step + simple merit line search (KKT section) ===
-
-    ϕ_kkt(x; ρ=1.0)  = f_kkt(x) + 0.5*ρ*c_kkt(x)^2
-    ∇ϕ_kkt(x; ρ=1.0) = ∇f_kkt(x) .+ ρ * c_kkt(x) .* ∇c_kkt(x)
-
-    """
-    kkt_step_kkt(x, λ; method=:gn, δ=1e-8)
-
-    Solve the 3×3 KKT system:
-      [ H  C';  C  0 ] [Δx; Δλ] = -[ ∇f + C'λ;  c ]
-    with C = ∇c(x) as a 1×2 row, H = ∇²f (Gauss–Newton) or ∇²f + λ∇²c (Full).
-    A small ridge δ is added to H on the diagonal for numerical robustness.
-    """
-    function kkt_step_kkt(x::AbstractVector, λ::Real; method::Symbol=:gn, δ::Float64=1e-8)
-        g   = ∇f_kkt(x)                 # 2
-        cv  = ∇c_kkt(x)                 # length-2
-        C   = reshape(cv, 1, :)         # 1×2
-        H   = Matrix(∇²f_kkt(x))
-        if method === :full
-            H .+= λ .* ∇²c_kkt(x)
-        end
-        # add small ridge on diagonal (avoid UniformScaling arithmetic)
-        @inbounds for i in 1:size(H,1); H[i,i] += δ; end
-
-        K   = [H  C';  C  0.0]          # 3×3
-        rhs = -vcat(g .+ λ .* cv, c_kkt(x))
-        Δ   = try
-            K \ rhs
-        catch
-            pinv(K) * rhs
-        end
-        Δx  = Δ[1:2];  Δλ = Δ[3]
-        return Δx, Δλ
-    end
-
-    """
-    kkt_solve_kkt(x0, λ0; iters=8, method=:gn, linesearch=true, ρ=1.0, b=1e-4, cdec=0.5)
-
-    A few KKT iterations with optional Armijo backtracking on ϕ_kkt.
-    Returns (X, Λ) with X ∈ ℝ^{2×(iters+1)}.
-    """
-    function kkt_solve_kkt(x0, λ0; iters=8, method=:gn, linesearch=true, ρ=1.0, b=1e-4, cdec=0.5)
-        x = copy(x0); λ = float(λ0)
-        X = reshape(x, 2, 1); Λ = [λ]
-        for _ in 1:iters
-            Δx, Δλ = kkt_step_kkt(x, λ; method=method)
-            α = 1.0
-            if linesearch
-                φx = ϕ_kkt(x; ρ=ρ)
-                gφ = ∇ϕ_kkt(x; ρ=ρ)
-                slope = dot(gφ, Δx)
-                for _ in 1:20
-                    if ϕ_kkt(x .+ α .* Δx; ρ=ρ) <= φx + b*α*slope
-                        break
-                    end
-                    α *= cdec
-                end
-            end
-            x .+= α .* Δx
-            λ  += α * Δλ
-            X   = hcat(X, x); push!(Λ, λ)
-        end
-        return X, Λ
-    end
-end
-
-
-# ╔═╡ a61a63b7-716e-4500-9bc6-ab2caf9062e7
+# ╔═╡ 79604603-df5e-47de-aeb8-08e7658fe190
 md"""
-### Controls (KKT)
+### Controls
 
-**x₁** $(@bind x1_kkt Slider(-3.5:0.1:1.5, default=-1.5, show_value=true))  
-**x₂** $(@bind x2_kkt Slider(-3.0:0.1:3.0, default=-1.0, show_value=true))  
+**Start**  
+x₁ $(@bind x1_kkt Slider(-3.5:0.1:3.5, default=-1.5, show_value=true))  
+x₂ $(@bind x2_kkt Slider(-3.0:0.1:3.0, default=-1.0, show_value=true))
 
-**λ₀** $(@bind λ0_kkt Slider(-2.0:0.1:2.0, default=0.0, show_value=true))  
-**Iterations** $(@bind iters_kkt Select([3, 5, 8, 10, 15, 20]; default=8))  
+**Dual init**  
+λ₀ $(@bind λ0_kkt Slider(-2.0:0.1:2.0, default=0.0, show_value=true))
 
-**Method** $(@bind method_kkt Select([:gn, :full]; default=:gn))  
-**Line search** $(@bind use_ls_kkt CheckBox(default=true))  
+**Solver**  
+Iters $(@bind iters_kkt Select([3,5,8,10,15,20]; default=8))  
+Method $(@bind method_kkt Select([:gn, :full]; default=:gn))  
+Line search $(@bind use_ls_kkt CheckBox(default=true))  
+ρ (merit weight) $(@bind rho_kkt Slider(0.1:0.1:5.0, default=1.0, show_value=true))
 
-**ρ (merit weight)** $(@bind rho_kkt Slider(0.1:0.1:5.0, default=1.0, show_value=true))  
-
-$(@bind run_kkt_btn Button("Run KKT"))
+$(@bind run_kkt Button("Run KKT"))
 """
 
-
-# ╔═╡ 1fda2985-ab68-4460-98be-8621e5a5f1c8
+# ╔═╡ c249309e-a47c-48d9-9b06-d448e0a57a28
 let
-    # === Run & plot (KKT section) ===
-    run_kkt_btn   # recompute only when the button is clicked
+    run_kkt
+	
+    x1_kkt; x2_kkt; λ0_kkt; iters_kkt; method_kkt; use_ls_kkt; rho_kkt
 
     x0 = [x1_kkt, x2_kkt]
-    X, Λ = kkt_solve_kkt(x0, λ0_kkt; iters=iters_kkt, method=method_kkt,
-                         linesearch=use_ls_kkt, ρ=rho_kkt)
+    X, Λ = kkt_solve(x0, λ0_kkt; iters=iters_kkt, method=method_kkt,
+                     linesearch=use_ls_kkt, ρ=rho_kkt)
 
     fig = landscape_plot_kkt()
-    plot_path_kkt!(fig, X)
+    plot_path_kkt!(fig, X; x0=x0)  
 
     feas = abs(c_kkt(X[:,end]))
-    stat = norm( ∇f_kkt(X[:,end]) .+ (Λ[end] .* ∇c_kkt(X[:,end])) )
-
-    plt.annotate!(fig, -1.8, 15.3, plt.text("feas = $(round(feas,digits=4))", 9))
-    plt.annotate!(fig, -1.8, 12.3, plt.text("stat = $(round(stat,digits=4))", 9))
-
+    stat = norm( ∇f_kkt(X[:,end]) .+ (Λ[end] .* ∇c_kkt(X[:,end])) ) 
     fig
 end
 
-# ╔═╡ ea0f0b1e-65b1-4c66-b9fa-7f2c428e3459
- 
-
-# ╔═╡ b4f6cce9-c39e-4325-a0e3-ab9c38179894
+# ╔═╡ 917ed8f6-d451-4725-a794-37b6bc7e46f5
 md"""
-# Part IV - Log-domain Interior-Point Method (IPM): Tiny QP
+**What to notice**
 
-We solve a 2D quadratic program with one inequality:
-
-- Objective: minimize $f(x) = \tfrac{1}{2}(x - [1,0])^\top Q (x - [1,0])$ with $Q=\mathrm{diag}(0.5, 1)$.
-- Constraint: $c(x) = (-1, 1)\cdot x - 1 \ge 0$ (i.e., $x_2 \ge x_1 + 1$).
-
-**Log-domain substitution** for inequality handling:
-$s = \sqrt{\rho}\,e^{\sigma}$, $\lambda = \sqrt{\rho}\,e^{-\sigma}$ so that $s\lambda = \rho$.
-
-We solve the relaxed KKT system $r(z;\rho)=0$ with unknowns $z=[x;\sigma]$ using damped Newton plus Armijo backtracking on the merit function $\phi(z)=\tfrac{1}{2}\lVert r(z)\rVert^2$.
+- The iterate stays close to the constraint curve (feasibility via the KKT step).
+- **Gauss–Newton** ($H=\nabla^2 f$) is usually robust from farther starts.
+- **Full** ($H=\nabla^2 f + \lambda\nabla^2 c$) accelerates near a solution.
+- Armijo on $\phi(x)=f(x)+\tfrac{\rho}{2}c(x)^2$ avoids oscillation and keeps the path stable across slider settings.
 """
 
-# ╔═╡ 252554be-a839-4770-b222-fbb6a32df2ef
-begin
-    # Quadratic objective
-    Q = Diagonal([0.5, 1.0])
-    f(x)  = 0.5 * dot(x .- [1.0, 0.0], Q * (x .- [1.0, 0.0]))
-    ∇f(x) = Q * (x .- [1.0, 0.0])
+# ╔═╡ c0a75eef-e3e1-4e5f-8184-292827870cb2
+md"""
+# Part IV — Interior-Point Method
 
-    # Single inequality c(x) ≥ 0 with gradient A = (-1, 1)
-    A = [-1.0, 1.0]             # length-2 vector
-    b = 1.0
-    c(x) = dot(A, x) - b        # scalar
-    J(x) = A'                   # 1×2 (shown for reference)
+##### Why Interior-Point?
+
+We want to solve an inequality-constrained problem
+
+$\min_x\ f(x)\quad\text{s.t.}\quad c(x)\ge 0$
+
+Interior-point methods keep the iterate **strictly inside** the feasible set and add a
+**barrier** that explodes as we approach the boundary:
+
+$F_\mu(x)\;=\;f(x)\;-\;\mu\,\log c(x),\qquad \mu>0$
+
+For a fixed $\mu$ we take a few Newton steps on $F_\mu$ (with a feasibility-aware line
+search). Then we **decrease** $\mu$ and repeat. As $\mu\downarrow 0$, the minimizer of $F_\mu$
+slides along the **central path** toward the true constrained optimum.
+
+
+More concretely, we solve the inequality problem by following minimizers of the **barrier objective**
+$F_\mu(x) \;=\; f(x)\;-\;\mu\,\log c(x), \qquad \mu>0$,
+staying strictly inside $c(x)>0$ and shrinking $\mu$.
+
+**Inputs.**
+- feasible start $x_0$ with $c(x_0)>0$  (or “interiorize” a guess),
+- barrier $\mu_0>0$, shrink factor $\tau\in(0,1)$ (e.g. $\tau=0.3$),
+- inner Newton tolerance / max steps.
+
+**Derivatives used by Newton.**: The gradient and Hessian of the barrier objective are
+
+$\nabla F_\mu(x)=\nabla f(x)\;-\;\frac{\mu}{c(x)}\,\nabla c(x)$
+$\nabla^2 F_\mu(x)=\nabla^2 f(x)
+\;+\;\frac{\mu}{c(x)^2}\,\nabla c(x)\nabla c(x)^\top
+\;-\;\frac{\mu}{c(x)}\,\nabla^2 c(x)$
+
+**Inner loop (Newton with feasibility-aware backtracking, fixed $\mu$).**
+
+1. Compute the Newton direction by solving
+
+$\nabla^2 F_\mu(x_k)\,\Delta x_k \;=\; -\,\nabla F_\mu(x_k)$
+
+2. Choose step length $\alpha \in \{1,\; \beta,\; \beta^2,\ldots\}$ (e.g. $beta=0.5$) until both hold:
+   - **interior:** $c(x_k+\alpha\Delta x_k) > 0$
+   - **Armijo decrease:** 
+
+     $F_\mu(x_k+\alpha\Delta x_k) \;\le\;
+     F_\mu(x_k) + b\,\alpha\,\nabla F_\mu(x_k)^\top \Delta x_k$ with $b\in(0,1)$ (e.g. $b=10^{-4}$).
+3. Update $x_{k+1} \leftarrow x_k+\alpha\Delta x_k$.
+4. Stop the inner loop if $\|\nabla F_\mu(x_{k+1})\|$ is small or the step count is reached.
+
+**Outer loop (reduce the barrier, warm-start).**
+
+1. Set $\mu \leftarrow \tau\,\mu$.
+2. Re-run the inner loop starting at the last $x$.
+3. Stop when $\mu \le \mu_{\min}$ (or changes in $x$ become tiny).
+
+This produces a sequence that tracks the **central path** and approaches the constrained minimizer as $\mu\downarrow 0$. 
+"""
+
+
+# ╔═╡ 60cc80f1-818b-45d4-8248-bf2e0bfb6936
+md"""
+##### Our tiny example 
+
+Objective (a shifted quadratic bowl):
+
+$f(x)=\tfrac12\,(x-x_\star)^\top Q\,(x-x_\star),
+\qquad
+Q=\mathrm{diag}(0.5,\,1),\quad x_\star=\begin{bmatrix}1 \\ 0\end{bmatrix}$
+
+
+Curved inequality (feasible region **above** the curve):
+
+$c(x)=x_2-\bigl(x_1^2+2x_1\bigr)\ \ge 0$
+
+The unconstrained minimizer $x_\star=(1,0)$ is **infeasible** for this constraint, so the true solution lies **on the boundary** $c(x)=0$.
+In the plot you’ll see:
+- the boundary $x_2=x_1^2+2x_1$ (orange),
+- a gold star at $x_\star$ (for reference),
+- red **×** markers for the **barrier Newton iterates**.
+
+Two practical details:
+
+1. We keep iterates strictly feasible with a tiny **interiorize** step if $c(x)\le 0$.  
+2. The line search accepts steps only if $c(x+\alpha\Delta x)>0$ **and**
+   $F_\mu$ decreases (Armijo condition).
+"""
+
+# ╔═╡ 8a5029b2-2355-4b9b-84d5-50970c6a4b44
+begin 
+
+    # Quadratic bowl (unconstrained minimizer at x⋆ = (1, 0))
+    Q      = Diagonal([0.5, 1.0])
+    xstar  = [1.0, 0.0]
+    f(x)   = 0.5 * dot(x .- xstar, Q * (x .- xstar))
+    ∇f(x)  = Q * (x .- xstar)
+    ∇²f(::AbstractVector) = Q
+
+    # Curved inequality: c(x) = x1^2 + 2 x1 - x2  ≥ 0
+    c(x)    = x[2] - (x[1]^2 + 2x[1])
+	∇c(x)   = [-2x[1] - 2.0,  1.0]
+	∇²c(::AbstractVector) = [-2.0  0.0;  0.0  0.0]   # constant
+
+    # Barrier objective pieces
+    Fμ(x, μ)   = f(x) - μ * log(c(x))
+    ∇Fμ(x, μ)  = ∇f(x) .- (μ / c(x)) .* ∇c(x)
+    ∇²Fμ(x, μ) = ∇²f(x) .+ (μ / (c(x)^2)) .* (∇c(x) * ∇c(x)') .- (μ / c(x)) .* ∇²c(x)
+
+    # Keep the iterate strictly feasible: nudge along +∇c until c(x) > eps
+    function interiorize(x; eps=1e-3)
+        cx = c(x)
+        cx > eps && return x
+        g  = ∇c(x)
+        t  = (eps - cx) / max(norm(g)^2, 1e-12)   # first-order step
+        return x .+ t .* g
+    end
+
+    # A few Newton steps on Fμ with Armijo + feasibility guard
+    function barrier_newton(x0, μ; steps=8, b=1e-4, shrink=0.5)
+        x = interiorize(x0)
+        X = reshape(x, 2, 1)
+        for _ in 1:steps
+            g = ∇Fμ(x, μ)
+            H = ∇²Fμ(x, μ)                 # SPD near the interior
+            Δ = - H \ g
+            # Backtrack until c(x+αΔ)>0 and Fμ decreases
+            α = 1.0
+            Fx = Fμ(x, μ); slope = dot(g, Δ)
+            while true
+                x_try = x .+ α .* Δ
+                if c(x_try) > 0 && Fμ(x_try, μ) <= Fx + b*α*slope
+                    x = x_try
+                    break
+                end
+                α *= shrink
+                if α < 1e-12; break; end
+            end
+            X = hcat(X, x)
+            if norm(g) < 1e-10; break; end
+        end
+        return X
+    end
+
+    # Plot: contours, constraint, stars, iterates
+    function ipm_plot(X; legend=:bottomright)
+        xs = range(-4, 4, length=181)
+        ys = range(-4, 4, length=181)
+        Z = [ f([x,y]) for y in ys, x in xs ]
+        p  = plt.contour(xs, ys, Z; levels=18, aspect_ratio=:equal,
+                         xlims=(-4,4), ylims=(-4,4),
+                         xlabel="x₁", ylabel="x₂",
+                         title="Interior-Point (log-barrier)",
+                         legend=legend)
+        # constraint curve: x2 = x1^2 + 2 x1
+        xc = collect(xs); yc = @. xc^2 + 2xc
+        plt.plot!(p, xc, yc; lw=2, label="c(x)=0 (boundary)")
+        # stars
+        plt.scatter!(p, [xstar[1]], [xstar[2]]; marker=:star5, ms=9, label="unconstrained x⋆")
+        # start + iterates
+        plt.scatter!(p, [X[1,1]], [X[2,1]]; marker=:star5, ms=9, label="start x₀")
+        plt.plot!(p, vec(X[1,:]), vec(X[2,:]); marker=:x, ms=6, lw=2, label="barrier iterates")
+        return p
+    end
 end
 
-# ╔═╡ 62d85874-9673-4893-bbff-fa75b4462e96
-begin
-    # Confidence check: our analytic ∇f, ∇²f vs automatic differentiation
-    fd_grad(x) = ForwardDiff.derivative(f, x)
-    fd_hess(x) = ForwardDiff.derivative(fd_grad, x)
-
-    xsamp = [-1.0, -0.25, 0.0, 0.5, 1.0]
-    grad_err = maximum(abs.(fd_grad.(xsamp) .- ∇f.(xsamp)))
-    hess_err = maximum(abs.(fd_hess.(xsamp) .- ∇²f.(xsamp)))
- 
-    (grad_err < 1e-10 && hess_err < 1e-10) ?
-        tip(md"AD check passed: analytic derivatives match ForwardDiff on sample points.") :
-        danger(md"AD check mismatch. Largest errors — grad: $(grad_err), hess: $(hess_err)")
-end
 
 # ╔═╡ 22bfe0a3-c61b-4dfe-8f20-a8bf807c2e14
 begin
@@ -900,241 +1154,66 @@ begin
 end
 
 
-# ╔═╡ 82e2eca9-4991-4538-8e1f-455cd46f849f
-begin
-    # Generic version
-    function landscape_plot(; xlim=(-4,4), ylim=(-4,4), nsamp=120, show_colorbar=false)
-        xs = range(xlim[1], xlim[2], length=nsamp)
-        ys = range(ylim[1], ylim[2], length=nsamp)
-        Z  = [ f([x,y]) for x in xs, y in ys ]  # size(Z) = (length(xs), length(ys))
-
-        p = plt.contour(xs, ys, Z;
-                        levels=18,
-                        colorbar=show_colorbar,
-                        xlabel="x₁", ylabel="x₂",
-                        title="Objective contours & constraint",
-                        legend=:topleft,
-                        aspect_ratio=:equal,
-                        xlims=(xlim[1], xlim[2]),  # hard-lock axes
-                        ylims=(ylim[1], ylim[2]))
-
-        xc = collect(xs)
-        yc = @. xc^2 + 2xc
-        plt.plot!(p, xc, yc; lw=2, label="c(x)=0")
-        plt.scatter!(p, [xstar[1]], [xstar[2]]; marker=:star5, ms=8, label="x⋆")
-
-        # re-enforce limits after adding series (paranoid, but safe)
-        plt.xlims!(p, (xlim[1], xlim[2]))
-        plt.ylims!(p, (ylim[1], ylim[2]))
-        return p
-    end
-
-    plot_path!(p, X) = begin
-        plt.plot!(p, X[1,:], X[2,:]; marker=:x, ms=6, lw=1.5, label="iterates")
-        plt.xlims!(p, (-4,4)); plt.ylims!(p, (-4,4))   # keep locked if path goes outside
-        p
-    end
-end
-
-
-# ╔═╡ db230e89-e8ea-4c57-8517-0dbf68cab6b7
+# ╔═╡ 8e66acef-684d-4536-ae9b-49ce6e8dc24b
 md"""
-## Visualizing the objective and the constraint
+##### How to read the figure
 
-We plot contour lines of $f(x)$ and the line $c(x)=0$ (the feasible region is on or above that line, i.e., $c(x)\ge 0$).
+- Pick a start \(x_1,x_2\) and a barrier strength $\mu=10^k$ with the sliders.
+- Click **Run IPM**: the code takes a handful of Newton steps on $F_\mu$.
+- Large $\mu$: iterates stay well inside; Small $\mu$: iterates **hug the boundary**
+  and move toward the constrained minimum.
+
+**Sanity checks as you play:**
+- Check $c(x)$ stays **positive** along the path (interior).  
+- Check $F_\mu$ is **monotone decreasing** across accepted steps.  
+- As you reduce $\mu$, the final point gets closer to the boundary optimum.
 """
 
-# ╔═╡ d9c51abd-2488-405f-9b4c-799f496c0dd1
-begin
-    function plot_landscape(; xlim=(-4.0, 4.0), ylim=(-4.0, 4.0))
-        xs = range(xlim[1], xlim[2], length=200)
-        ys = range(ylim[1], ylim[2], length=200)
-        Z  = [f([xi, yi]) for yi in ys, xi in xs]
-
-        p = plt.contour(
-            xs, ys, Z;
-            fill=false,
-            xlabel="x₁", ylabel="x₂",
-            title="Objective & constraint",
-            aspect_ratio=1,          # square figure; keep if you like
-            xlims=xlim, ylims=ylim   # << fix the visible ranges
-        )
-
-        plt.plot!(p, xs, xs .+ 1; label="c(x)=0 (x₂ = x₁ + 1)")
-        return p
-    end
-
-    fig_test = plot_landscape()  # will be limited to [-4,4] × [-4,4]
-end
-
-
-# ╔═╡ af7cf190-fa37-40f7-ac9e-dbdb8e72fff8
+# ╔═╡ 2ff89961-af3e-4792-8f71-3f2a2ca53056
 md"""
-## Log-domain IP residuals
+### IPM controls
 
-With $z=[x;\sigma]$ and parameter $\rho>0$, define
-$\lambda(z,\rho)=\sqrt{\rho}\,e^{-\sigma}$ and $s(z,\rho)=\sqrt{\rho}\,e^{\sigma}$.
+Start x₁  $(@bind x1 PlutoUI.Slider(-3.0:0.1:2.0, default=-2.0, show_value=true))  
+Start x₂  $(@bind x2 PlutoUI.Slider(-2.0:0.1:4.0, default= 2.0, show_value=true))
 
-Residuals:
-- Stationarity (2 numbers): $\nabla f(x) - \lambda A = 0$.
-- Primal feasibility (1 number): $c(x) - s = 0$.
+Barrier exponent \(k\) (we use \(\mu=10^k\))  
+k = $(@bind k PlutoUI.Slider(-6:0.05:0, default=-3, show_value=true))
 
-So $r(z;\rho) = \begin{bmatrix} \nabla f(x) - \lambda A \\ c(x) - s \end{bmatrix} \in \mathbb{R}^3$.
-"""
+Steps $(@bind steps PlutoUI.Select([4,6,8,10,15,20,25,50,100]; default=8))
 
-# ╔═╡ 6c5b33c5-94fc-4b41-8128-696a58ca9b64
-begin
-    function ip_residual(z::AbstractVector, ρ::Real)
-        x = z[1:2]
-        σ = z[3]
-        λ = sqrt(ρ) * exp(-σ)      # ≥ 0
-        s = sqrt(ρ) * exp(σ)       # ≥ 0
-        r1 = ∇f(x) .- (λ .* A)     # length-2
-        r2 = c(x) - s              # scalar
-        return vcat(r1, r2)        # length-3
-    end
-end
-
-# ╔═╡ 64d20ba5-d195-41ef-88b8-d2968bf87ac2
-md"""
-## Newton solve for fixed $\rho$
-
-We solve $r(z; \rho)=0$ with damped Newton on the merit $\phi(z)=\tfrac{1}{2}\lVert r(z)\rVert^2$.
-
-Directional derivative of $\phi$ along $\Delta z$ is $r(z)^\top J(z)\,\Delta z$ where $J$ is the Jacobian of $r$.
-"""
-
-# ╔═╡ 4f9c5ddd-05f5-4826-a775-bc1af4555153
-begin
-    function newton_solve(z0::AbstractVector, ρ; tol=1e-10, maxiter=50, α_min=1e-12)
-        z = copy(z0)
-        R = ip_residual(z, ρ)
-        Zhist = reshape(z, :, 1)
-
-        for k in 1:maxiter
-            if norm(R) ≤ tol
-                return z, Zhist
-            end
-            Jz = ForwardDiff.jacobian(zz -> ip_residual(zz, ρ), z)  # 3×3
-            Δz = -Jz \ R
-
-            ϕz  = 0.5 * dot(R, R)
-            gΔ  = dot(R, Jz * Δz)       # directional derivative of ϕ at z along Δz
-            α   = 1.0
-            z_new = z .+ α .* Δz
-            R_new = ip_residual(z_new, ρ)
-            ϕnew  = 0.5 * dot(R_new, R_new)
-            c_armijo, shrink = 1e-4, 0.5
-
-            if gΔ > 0
-                # fallback: just ensure decrease in ϕ
-                while ϕnew > ϕz && α > α_min
-                    α *= shrink
-                    z_new = z .+ α .* Δz
-                    R_new = ip_residual(z_new, ρ)
-                    ϕnew  = 0.5 * dot(R_new, R_new)
-                end
-            else
-                # standard Armijo
-                while ϕnew > ϕz + c_armijo*α*gΔ && α > α_min
-                    α *= shrink
-                    z_new = z .+ α .* Δz
-                    R_new = ip_residual(z_new, ρ)
-                    ϕnew  = 0.5 * dot(R_new, R_new)
-                end
-            end
-
-            z, R = z_new, R_new
-            Zhist = hcat(Zhist, z)
-        end
-        return z, Zhist
-    end
-end
-
-# ╔═╡ 1fb54858-898e-4d0d-8435-746bf3c17e65
-md"""
-#### KKT sanity checks to report: 
-* stationarity norm $\lVert\nabla f(x) - \lambda A\rVert$
-* primal feasibility $c(x)$ 
-* dual feasibility $\lambda$ 
-* and complementarity slackness $\lambda\,c(x)$
-
-These should approach zero feasibility violation and complementarity as $\rho \to 0$.
+$(@bind run_p4 PlutoUI.Button("Run IPM"))
 """
 
 
-# ╔═╡ 2070905c-d96b-4e3d-8a51-f0bf26ba98b8
-begin
-    function kkt_checks(z, ρ)
-        x, σ = z[1:2], z[3]
-        λ = sqrt(ρ) * exp(-σ)
-        (; stationarity_norm = norm(∇f(x) .- (λ .* A)),
-           primal_feas       = c(x),     # should be ≥ 0
-           dual_feas         = λ,        # should be ≥ 0
-           complementarity   = λ * c(x))
-    end
+# ╔═╡ eb4d1779-2283-44ca-addb-47713e04948d
+let
+    run_p4
+    μ = 10.0^k
+    X = barrier_newton([x1, x2], μ; steps=steps)
+    ipm_plot(X)
 end
 
 
-# ╔═╡ 08270f19-7c1c-4707-baf8-fa985519baf3
-md"""
-## Demo: follow the central path by decreasing $\rho$
+# ╔═╡ e06d3761-77a6-4e84-a3ea-d13b6d0c57dd
+md""" 
 
-We warm-start Newton at a smaller $\rho$ and plot the iterates on the $(x_1,x_2)$ plane.
+The takeaway from IPM in a nutshell is that IPM consists of repeating the following steps in iterative fashion:
+
+
+$\textbf{repeat:}\quad
+\begin{cases}
+\text{(inner) solve } \min_x F_\mu(x)\ \text{by Newton + backtracking},\\[2pt]
+\text{(outer) } \mu \leftarrow \tau\,\mu\quad(0<\tau<1)\ \text{and warm-start}.
+\end{cases}$
+
+At a constrained solution $x^\star$, the KKT conditions read
+
+$\nabla f(x^\star) - J_c(x^\star)^\top \lambda^\star = 0,\quad
+c(x^\star)\ge 0,\quad \lambda^\star\ge 0,\quad
+\lambda^{\star\top}c(x^\star)=0$
+Barrier methods implicitly track $\lambda \approx \mu/c(x)$ and drive
+$\lambda\circ c(x)\to 0$ as $\mu\downarrow 0$ (complementarity).
 """
-
-
-# ╔═╡ a4c50b10-0a6f-4967-9895-e5171f44fafa
-begin
-    # Initial guess (must be feasible or strictly interior for the barrier)
-    x0_init = [-2.0, 2.0]
-    σ0_init = 0.0
-    z0_init = vcat(x0_init, σ0_init)   # [x; σ] ∈ ℝ^3
-
-    # Central-path parameters
-    ρ_path1 = 1.0
-    ρ_path2 = 1e-8
-end
-
-# ╔═╡ 71530ac2-841c-4616-98e3-2dedd63e3834
-begin
-    # cold-start both runs from the same z0_init
-    sol_rho1_cold, traj_rho1_cold = newton_solve(z0_init, ρ_path1; tol=1e-10)
-    sol_rho2_cold, traj_rho2_cold = newton_solve(z0_init, ρ_path2; tol=1e-10)
-
-    fig_ipm_compare = plot_landscape(xlim=(-4,4), ylim=(-4,4))
-    plt.plot!(fig_ipm_compare; legend=:bottomright, grid=true)
-
-    # starting point
-    plt.scatter!(fig_ipm_compare, [z0_init[1]], [z0_init[2]];
-        label="start", markershape=:star5, markersize=9, markerstrokewidth=0, color=:black)
-
-    # path & final for ρ = 1.0
-    plt.plot!(fig_ipm_compare, vec(traj_rho1_cold[1, :]), vec(traj_rho1_cold[2, :]);
-        label="iterates ρ=1.0", lw=2, marker=:circle, markersize=3, color=:blue) 
-
-    # path & final for ρ = 1e-8
-    plt.plot!(fig_ipm_compare, vec(traj_rho2_cold[1, :]), vec(traj_rho2_cold[2, :]);
-        label="iterates ρ=1e-8", lw=2, marker=:utriangle, markersize=3, color=:red)
-    
-
-    fig_ipm_compare
-end
-
-
-
-# ╔═╡ fe6ec86b-84c1-4e82-85e0-dce1a316214a
-md"""
-### Optional: Jacobian of the residual at the final point
-
-The Jacobian $J(z)$ of $r(z;\\rho)$ at the final iterate can be inspected via eigenvalues to gauge local conditioning.
-"""
-
-# ╔═╡ 686b3f99-11df-4cc0-b739-3ff8476d217d
-
-
-# ╔═╡ 8aa33896-2585-4a60-86dc-7386b96feb9f
-
 
 # ╔═╡ 3132cda5-ad6e-4ae2-afba-ea18d09cf8df
 md"""
@@ -1146,62 +1225,63 @@ md"""
 - Linearize the constraints around the current iterate.
 - Each iteration: solve a QP to get a step $d$, then update $x \leftarrow x + \alpha d$.
 - Strengths: Newton-like local convergence (often superlinear), warm-start friendly.
-"""
 
-
-
-# ╔═╡ 74d5c04f-3f63-41ba-818d-ce217cd18022
-md"""
-## Problem & KKT recap
+##### Problem & KKT recap
 
 We consider
-$\min_{x \in \mathbb{R}^n} \ f(x) \quad \text{s.t.}\quad g(x)=0,\ \ h(x)\le 0$.
 
-At a candidate optimum $x^\star$, the KKT conditions require multipliers
-$\lambda \in \mathbb{R}^m$, $\mu \in \mathbb{R}^p_{\ge 0}$ such that
-$\nabla f(x^\star) + \nabla g(x^\star)^\top \lambda + \nabla h(x^\star)^\top \mu = 0$,
-$g(x^\star)=0,\ \ h(x^\star)\le 0,\ \ \mu \ge 0,\ \ \mu \odot h(x^\star)=0$.
-"""
+```math
+\min_{x \in \mathbb{R}^n} f(x) \quad \text{s.t.}\quad g(x)=0,\ \ h(x)\le 0.
+```
 
+At a candidate optimum $x^\star$, the KKT conditions require multipliers $\lambda \in \mathbb{R}^m$, $\mu \in \mathbb{R}^p_{\ge 0}$ such that
 
-# ╔═╡ 4b560ea8-8104-40ce-bf44-b5c2267132eb
-md"""
-## Local models that define the QP
+```math
+\nabla f(x^\star) + \nabla g(x^\star)^\top \lambda + \nabla h(x^\star)^\top \mu = 0
+```
+
+```math
+g(x^\star)=0,\ \ h(x^\star)\le 0,\ \ \mu \ge 0,\ \ \mu \odot h(x^\star)=0
+```
+
+##### Local models that define the QP
 
 At iterate $x_k$ with multipliers $(\lambda_k,\mu_k)$:
 
 **Quadratic model**
-$m_k(d) \;=\; \nabla f(x_k)^\top d \;+\; \tfrac{1}{2}\, d^\top B_k\, d,$
+
+```math
+m_k(d) = \nabla f(x_k)^\top d + \tfrac{1}{2}\, d^\top B_k\, d
+```
+
 with $B_k \approx \nabla^2_{xx}\mathcal{L}(x_k,\lambda_k,\mu_k)$. Common choices: exact Hessian, (L-)BFGS, or Gauss–Newton.
 
 **Linearized constraints**
-$ g(x_k) + \nabla g(x_k)\, d = 0, \qquad h(x_k) + \nabla h(x_k)\, d \le 0.$
-"""
 
-# ╔═╡ 96738f09-e894-499e-9e30-15692e2434dd
-md"""
-## The SQP subproblem (QP)
+```math
+\begin{aligned}
+g(x_k) + \nabla g(x_k)\, d &= 0,\\
+h(x_k) + \nabla h(x_k)\, d &\le 0.
+\end{aligned}
+```
 
-$
+##### The SQP subproblem (QP)
+
+```math
 \begin{aligned}
 \min_{d \in \mathbb{R}^n}\quad &
-\nabla f(x_k)^\top d \;+\; \tfrac{1}{2}\, d^\top B_k\, d \\
+\nabla f(x_k)^\top d + \tfrac{1}{2}\, d^\top B_k\, d \\
 \text{s.t.}\quad &
 \nabla g(x_k)\, d + g(x_k) = 0, \\
 &
 \nabla h(x_k)\, d + h(x_k) \le 0.
 \end{aligned}
-$
+```
 
-Solving this QP yields a step $d_k$ and QP multipliers $(\lambda_{k+1},\mu_{k+1})$.
-Update with $x_{k+1} = x_k + \alpha_k d_k$ (line search or trust region).
-"""
+Solving this QP yields a step $(d_k)$ and QP multipliers $(\lambda_{k+1},\mu_{k+1})$.
+Update with $(x_{k+1} = x_k + \alpha_k d_k)$ (line search or trust region).
 
-
-
-# ╔═╡ 704f8f36-fda1-445e-9551-942fd85bff42
-md"""
-## SQP (line-search flavor): 6 steps
+##### SQP (line-search flavor): 6 steps
 
 1. Initialize $x_0$, multipliers $(\lambda_0,\mu_0)$, and $B_0 \succ 0$.
 2. Build the QP at $x_k$ using $B_k$, $\nabla g(x_k)$, $\nabla h(x_k)$, $g(x_k)$, $h(x_k)$.
@@ -1209,13 +1289,8 @@ md"""
 4. Choose $\alpha_k \in (0,1]$ via globalization (merit or filter).
 5. Set $x_{k+1} = x_k + \alpha_k d_k$.
 6. Update $B_{k+1}$ (e.g., damped BFGS). Stop when KKT residuals are small.
-"""
 
-
-
-# ╔═╡ b6acef39-d40d-42e6-b037-10713dc1254e
-md"""
-### Globalization: make SQP robust
+##### Globalization: make SQP robust
 
 **Merit (penalty) function** for line search, e.g.
 $\phi(x) \;=\; f(x) \;+\; \tfrac{\rho}{2}\,\|g(x)\|^2 \;+\; \rho\,\|h(x)_+\|_1,$
@@ -1225,109 +1300,64 @@ and choose $\alpha_k$ by Armijo/backtracking so $\phi$ decreases.
 
 **Trust-region SQP**: restrict $\|d\|\le \Delta_k$, compare predicted vs actual reduction, adjust $\Delta_k$.
 
-### Inequalities & active sets (intuition)
+##### Inequalities & active sets (intuition)
 
 - The QP contains the **linearized inequalities** $h(x_k)+\nabla h(x_k)d \le 0$.
 - Its KKT system enforces complementarity via multiplier signs and active constraints.
 - A small **working set** (estimated active constraints) tends to stabilize across iterations, enabling warm starts and fast solves.
- 
 """
-
-
-
-# ╔═╡ 34737fc8-095c-4061-8661-e776c23c7eed
-
-
-# ╔═╡ fc35e75c-b81d-44eb-bcee-74c590e38652
-
-
-# ╔═╡ 32587054-655f-4f06-9ff8-500ba44bec76
-
-
-# ╔═╡ 3dfc4b4e-85e3-4dee-ae33-5ddb2a4eec29
-question_box(md"hello")
-
-# ╔═╡ e8f62342-88ab-4754-af33-e2347be2daa0
-Foldable(md"Compressed vs. separated form", md"
-We can either express the values of $x$ and $u$ at $t_{k + \frac{1}{2}}$ with the expressions above, or we can set them as decision variables, and enforce the expressions above as equality constraints.
-Doing the former results in *compressed form* and the latter *separated form*.
-The compressed form tends to perform better with a large number of segments and the separated form a small number of segments [^kelly2017].
-")
 
 # ╔═╡ Cell order:
 # ╟─81ebc291-89f0-4c1e-ac34-d5715977dd86
 # ╟─9543f7bc-ab36-46ff-b471-9aa3db9739e4
-# ╠═8969e78a-29b0-46d3-b6ba-59980208fe5b
+# ╟─8969e78a-29b0-46d3-b6ba-59980208fe5b
 # ╟─d90e9be0-7b68-4139-b185-6cbaad0d307e
-# ╠═7b896268-4336-47e2-a8b5-f985bfde51f5
+# ╟─7b896268-4336-47e2-a8b5-f985bfde51f5
 # ╟─342decc1-43fa-432a-9a9c-757a10ba6a5d
 # ╟─fd1ad74b-cb74-49a7-80b8-1a282abfdff2
+# ╟─5e6c4ea7-b283-423c-b9c0-421d53cebc2d
 # ╠═49d5b2e6-eb29-478c-b817-8405d55170b1
-# ╠═950c61b8-f076-4b9a-8970-e5c2841d75f2
+# ╟─950c61b8-f076-4b9a-8970-e5c2841d75f2
+# ╟─80035b9c-eba6-469c-b138-c6c792979493
 # ╠═92841a2e-bc0d-40f8-8344-a5c398a67275
-# ╠═8813982c-8c9a-4706-91a8-ebadf9323a4f
+# ╟─8813982c-8c9a-4706-91a8-ebadf9323a4f
 # ╠═4307a2f3-0378-4282-815b-9ed1fa532e1c
-# ╠═a45ed97f-f7c1-4ef5-9bc7-654e827f751b
+# ╟─a45ed97f-f7c1-4ef5-9bc7-654e827f751b
 # ╠═5a17f83e-751b-4244-9c15-7165645bfe29
-# ╟─12c03202-58b2-482e-a65c-b83bc1f6eed1
-# ╠═662d58d7-4c9c-4699-a846-cb6070c507d9
+# ╟─56c965c9-5acc-40a5-b1dd-c3a59f0462a9
+# ╟─af82d16d-c649-461b-856a-42355517d9f4
+# ╟─662d58d7-4c9c-4699-a846-cb6070c507d9
 # ╠═27760607-b740-47dc-a810-c332baa2bd2d
-# ╟─7765e032-c520-4f97-b877-0d479f383f28
 # ╠═a098a49b-a368-4929-824c-385a06b88696
-# ╠═62d85874-9673-4893-bbff-fa75b4462e96
-# ╠═a62f1b6a-87fe-4401-bc13-42166ca0e129
+# ╟─17ac372e-87e6-4649-ba9d-1df1cdb7b55b
+# ╟─a62f1b6a-87fe-4401-bc13-42166ca0e129
+# ╟─be41026f-cb28-4647-8db6-1d243739f444
 # ╠═b2ddc048-4942-43bc-8faa-1921062d8c9c
+# ╟─1ffa2941-619b-400a-ba0f-56baa6ee7f59
 # ╠═6fd7a753-6db7-4c37-9e22-dc63dd3072c8
 # ╠═49e0f5c3-fe14-42e1-9b3a-83c4447148a8
 # ╠═096ebc95-f133-4ca3-b942-cf735faaa42b
-# ╠═fdf41c76-4405-49e0-abfa-5c5193de99f4
+# ╟─fdf41c76-4405-49e0-abfa-5c5193de99f4
 # ╠═22bfe0a3-c61b-4dfe-8f20-a8bf807c2e14
-# ╠═d259c1b8-3716-4f80-b462-3b3daebb444d
-# ╠═858d4ee1-4f15-4ced-b984-c0291237d359
-# ╠═e012d7e0-0181-49d0-bb78-995378c4f87a
-# ╠═0a3eb748-fab3-4f8b-993e-2246c32fb6aa
-# ╠═3989b8e1-ac1f-430d-9d72-e298ba7ae0ca
-# ╠═e466ffb2-fcc8-4c3b-9059-7fd68a4265f2
-# ╠═09a301c7-c1f4-4890-afe9-fbc1d7c3b905
-# ╠═53020b8a-4948-467a-8629-bef9496d0374
-# ╠═26c887ce-d95b-4e38-9717-e119de0e80ca
-# ╟─a1b7f614-710a-4ce8-815b-2f94754088c4
-# ╟─6fd82e73-6fef-4f7f-b291-f94cbac0d268
-# ╠═52718e0b-f958-445e-b9b6-9e5baf09e81a
-# ╠═edce5b27-9af8-4010-9d9f-60681b2f427c
-# ╠═c139ccc9-0355-4c41-8d82-0c97fef50900
-# ╟─43c5ccb9-d51e-4d73-b7be-f8b9dd599130
-# ╠═e0a7f431-61dd-4df2-b53c-d81c7a302baf
-# ╠═82e2eca9-4991-4538-8e1f-455cd46f849f
-# ╠═3e3d6e18-f922-4e91-8eaf-bc26b8f91757
-# ╠═31407c3f-8f3d-4dcc-bc49-cedd8ca14013
-# ╠═a61a63b7-716e-4500-9bc6-ab2caf9062e7
-# ╠═1fda2985-ab68-4460-98be-8621e5a5f1c8
-# ╠═ea0f0b1e-65b1-4c66-b9fa-7f2c428e3459
-# ╠═b4f6cce9-c39e-4325-a0e3-ab9c38179894
-# ╠═252554be-a839-4770-b222-fbb6a32df2ef
-# ╠═db230e89-e8ea-4c57-8517-0dbf68cab6b7
-# ╠═d9c51abd-2488-405f-9b4c-799f496c0dd1
-# ╠═af7cf190-fa37-40f7-ac9e-dbdb8e72fff8
-# ╠═6c5b33c5-94fc-4b41-8128-696a58ca9b64
-# ╠═64d20ba5-d195-41ef-88b8-d2968bf87ac2
-# ╠═4f9c5ddd-05f5-4826-a775-bc1af4555153
-# ╠═1fb54858-898e-4d0d-8435-746bf3c17e65
-# ╠═2070905c-d96b-4e3d-8a51-f0bf26ba98b8
-# ╠═08270f19-7c1c-4707-baf8-fa985519baf3
-# ╠═a4c50b10-0a6f-4967-9895-e5171f44fafa
-# ╠═71530ac2-841c-4616-98e3-2dedd63e3834
-# ╠═fe6ec86b-84c1-4e82-85e0-dce1a316214a
-# ╠═686b3f99-11df-4cc0-b739-3ff8476d217d
-# ╠═8aa33896-2585-4a60-86dc-7386b96feb9f
-# ╠═3132cda5-ad6e-4ae2-afba-ea18d09cf8df
-# ╟─74d5c04f-3f63-41ba-818d-ce217cd18022
-# ╟─4b560ea8-8104-40ce-bf44-b5c2267132eb
-# ╟─96738f09-e894-499e-9e30-15692e2434dd
-# ╟─704f8f36-fda1-445e-9551-942fd85bff42
-# ╟─b6acef39-d40d-42e6-b037-10713dc1254e
-# ╠═34737fc8-095c-4061-8661-e776c23c7eed
-# ╠═fc35e75c-b81d-44eb-bcee-74c590e38652
-# ╠═32587054-655f-4f06-9ff8-500ba44bec76
-# ╠═3dfc4b4e-85e3-4dee-ae33-5ddb2a4eec29
-# ╠═e8f62342-88ab-4754-af33-e2347be2daa0
+# ╟─d259c1b8-3716-4f80-b462-3b3daebb444d
+# ╟─76c51e32-bd0e-4e72-8c47-64352da13d3e
+# ╟─858d4ee1-4f15-4ced-b984-c0291237d359
+# ╟─e012d7e0-0181-49d0-bb78-995378c4f87a
+# ╟─26c887ce-d95b-4e38-9717-e119de0e80ca
+# ╟─52718e0b-f958-445e-b9b6-9e5baf09e81a
+# ╟─edce5b27-9af8-4010-9d9f-60681b2f427c
+# ╟─4a3bdacd-bc17-4b10-bbed-6d34f0531d60
+# ╠═20fa9f12-ef19-482a-be83-feaed95109c3
+# ╠═6c560afb-921d-4f34-b77b-a31e37b7d571
+# ╠═4d8533ef-be1b-45c9-acaf-ce278c3e5db7
+# ╟─79604603-df5e-47de-aeb8-08e7658fe190
+# ╠═c249309e-a47c-48d9-9b06-d448e0a57a28
+# ╟─917ed8f6-d451-4725-a794-37b6bc7e46f5
+# ╟─c0a75eef-e3e1-4e5f-8184-292827870cb2
+# ╟─60cc80f1-818b-45d4-8248-bf2e0bfb6936
+# ╠═8a5029b2-2355-4b9b-84d5-50970c6a4b44
+# ╟─8e66acef-684d-4536-ae9b-49ce6e8dc24b
+# ╟─2ff89961-af3e-4792-8f71-3f2a2ca53056
+# ╠═eb4d1779-2283-44ca-addb-47713e04948d
+# ╟─e06d3761-77a6-4e84-a3ea-d13b6d0c57dd
+# ╟─3132cda5-ad6e-4ae2-afba-ea18d09cf8df

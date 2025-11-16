@@ -11,6 +11,7 @@ plutos = [
     joinpath(repo_dir, "class01", "background_materials", "optimization_basics.html"),
     joinpath(repo_dir, "class01", "background_materials", "optimization_motivation.html"),
     joinpath(repo_dir, "class01", "class01_intro.html"),
+    joinpath(repo_dir, "class02", "class02.html"),
     joinpath(repo_dir, "class02", "part1_minimization.html"),
     joinpath(repo_dir, "class02", "part1_root_finding.html"),
     joinpath(repo_dir, "class02", "part2_eq_constraints.html"),

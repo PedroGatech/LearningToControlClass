@@ -4,6 +4,8 @@
 
 **Topic:** Numerical optimization for control (gradient/SQP/QP); ALM vs. interior-point vs. penalty methods
 
+**Pluto Notebook for all the chapter**: Here is the actual [final chapter](https://learningtooptimize.github.io/LearningToControlClass/dev/class02/class02.html)
+
 ---
 
 ## Overview
@@ -65,8 +67,7 @@ The class is structured around four interactive Jupyter notebooks that build upo
 
 ### Additional Resources
 
-- **[Lecture Slides (PDF)](https://learningtooptimize.github.io/LearningToControlClass/dev/class02/ISYE_8803___Lecture_2___Slides.pdf)** - Complete slide deck from the presentation
-- **[LaTeX Source Files](https://learningtooptimize.github.io/LearningToControlClass/dev/class02/main.tex)** - Source code for the lecture slides
+- **[Lecture Slides (PDF)](https://learningtooptimize.github.io/LearningToControlClass/dev/class02/ISYE_8803___Lecture_2___Slides.pdf)** - Complete slide deck from the presentation 
 - **[Demo Script](https://learningtooptimize.github.io/LearningToControlClass/dev/class02/penalty_barrier_demo.py)** - Python demonstration of penalty vs. barrier methods
 
 ## Key Concepts Covered
@@ -89,23 +90,6 @@ The class is structured around four interactive Jupyter notebooks that build upo
 - **Penalty Methods**: Quadratic and exact penalty functions
 - **Augmented Lagrangian**: Combining penalty and multiplier methods
 
-## Practical Applications
-
-The methods covered in this class are fundamental to:
-- **Optimal Control**: Trajectory optimization and feedback control design
-- **Model Predictive Control**: Real-time optimization with constraints
-- **Robotics**: Motion planning and control with obstacle avoidance
-- **Engineering Design**: Constrained optimization in mechanical systems
-
-## Further Reading
-
-## Next Steps
-
-This class provides the foundation for the advanced topics covered in subsequent classes, including:
-- Pontryagin's Maximum Principle (Class 3)
-- Nonlinear trajectory optimization (Class 5)
-- Stochastic optimal control (Class 7)
-- Physics-Informed Neural Networks (Class 10)
 
 ---
 

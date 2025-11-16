@@ -197,7 +197,9 @@ The **DC power flow model** provides a linearized approximation of AC power flow
 
 # ╔═╡ 7b4800c2-133d-4793-95b1-a654a4f19558
 md"""
-### DC Optimal Power Flow Formulation
+### DC Power Flow Formulation
+
+The DC power flow optimization problem combines economic dispatch with network physics:
 
 ```math
 \begin{align}
@@ -209,20 +211,20 @@ md"""
 \end{align}
 ```
 
-- Reactance of line: $x_{ij}$. $\frac{1}{x_{ij}} = b_{ij}$: susceptance (specified by equipment manufacturer)
-- Reference bus: only for modeling, you can pick any bus as the reference bus. We only care about angle differences (which carries current through lines)
+- Reactance of line $x_{ij}$. $\frac{1}{x_{ij}} = b_{ij}$: susceptance (manufacturer specified)
+- Reference bus: only for modeling, you can pick any bus as the reference bus. We only care about angle differences (which carries current through lines
 - Individual bus angle has no physical meaning
 """
 
 # ╔═╡ 7961c1d1-3e82-49ea-8201-c5f82066d70d
 md"""
-### Exercise: Solve DCOPF (suggested solver: Ipopt)
+### Exercise: Solve DCOPF (solver suggested: Ipopt)
 
-Let's apply the DC power flow formulation to the 3-bus network with line constraints:
+Let's apply the DC power flow formulation to our 3-bus network with line constraints:
 
 ![3-Bus Network with Constraints](https://www.al-roomi.org/multimedia/Power_Flow/3BusSystem/SystemIII/Murty3BusSystem.jpg)
 
-**Net generation calculations:**
+**How did I get the numbers:**
 - Assume P1 generates 85 MW, with 50 MW of load, the net injection is 35 MW
 - Assume P2 generates 40 MW, with no load, net injection is 40 MW (we take upwards arrow as injection)
 - Bus 3 has no gen, only load
@@ -232,7 +234,7 @@ Let's apply the DC power flow formulation to the 3-bus network with line constra
 md"""
 ### DCOPF Solution
 
-Consult lecture slides for the solution and detailed analysis. Observe how adding line limits changes dispatch and total cost.
+Consult lecture slides for the solution and detailed analysis.
 """
 
 # ╔═╡ f72775b9-818c-4a9b-9b66-cfccd88e17ed
@@ -241,10 +243,9 @@ md"""
 
 This section has introduced the fundamentals of static optimal power flow problems including economic dispatch and DC optimal power flow. Key takeaways:
 
-- You observed that without thermal limits, optimal dispatch from ED can overload lines
-- Real systems are AC (complex voltages/currents) -- much harder. This is just a lightweight intro so we can think about expressing real-world problems as optimization formulations without burdening ourselves with AC physics, which we will see in transient stability section.
-
-In the next section, we introduce transients and transient stability constraints to capture dynamic states of grid components, bringing time domain dynamics into the optimization.
+- You will see that without thermal limits, optimal dispatch can overload lines
+- Reference bus is arbitrarily picked by the solver.
+- Real systems are AC (complex voltages/currents) -- much harder. This is just a lightweight intro so we can think about expressing real-world problems as optimization formulations without overburdening ourselves with AC physics, which we will see in transient stability section.
 """
 
 # ╔═╡ 53ab9b31-78aa-49b6-9e24-df47aa80f25a
@@ -946,11 +947,6 @@ J\omega\dot{\omega} = P_m - P_e
 ```
 
 This relates how fast the mass is spinning ($\omega$) to the imbalance of power input (generation) and power withdrawal (load + losses).
-"""
-
-# ╔═╡ 3a911e1a-5ec9-4eb0-9ec5-4ee2502e5103
-md"""
-## From Torque to Power (Continued)
 
 In practice, generators operate close to system frequency, so the generators spin at an angular velocity that is close to that 60 Hz constant. Since the variations are mostly tiny, we can define inertia constant $M = J\omega$
 
@@ -991,7 +987,7 @@ So we have per unit swing:
 
 # ╔═╡ abcd31d0-c6eb-4bc7-a752-83a8d7f6fda1
 md"""
-## Damping and Advanced Forms
+## Damping and Another Form of Generator Swing Equations
 
 Some also add damping:
 
@@ -1080,7 +1076,7 @@ M_{\text{virtual}} \dot{\omega} = P_{\text{ref}} - P
 
 # ╔═╡ 0a2c4c0a-c68e-4f21-afbb-1b80791ec166
 md"""
-## Virtual Inertia (continued)
+## Virtual Inertia
 
 **How it works:**
 - The inverter adjusts its internal frequency reference according to power imbalance
@@ -1172,11 +1168,6 @@ Power-flow balance:
 P_G - P_D = \text{network losses}, \qquad
 Q_G - Q_D = 0.
 ```
-"""
-
-# ╔═╡ 2644c1ad-c1aa-4b03-ab27-fb414c03e3af
-md"""
-## Steady-State Load Models Continued
 
 However, the static load model has important limitations. Interpretation of the above model:
 - Loads are fixed regardless of system conditions, or at most respond to nodal voltage.
@@ -1231,11 +1222,6 @@ J\frac{d\omega_r}{dt} = T_e(V,\omega_r) - T_m
 \quad\Longleftrightarrow\quad
 J\,\omega_s\,\frac{ds}{dt} = T_m - T_e(V,s).
 ```
-"""
-
-# ╔═╡ 64252a52-551a-4119-9e6e-78a0b3338ef9
-md"""
-## Rotor Dynamics (continued)
 
 **Variable definitions:**
 - Rotor inertia (kg·$m^2$): $J$
@@ -1338,10 +1324,7 @@ Q_d &= x_q\!\left(\frac{V}{V_0}\right)^{N_{qt}}.
 **Parameters:**
 - Internal recovery states (how much of the load has recovered): $x_p, x_q$
 - Time constants — larger values $\Rightarrow$ slower recovery: $T_p, T_q$
-"""
 
-# ╔═╡ c9d0e1f2-0894-4340-a18b-72f8e1204497
-md"""
 ## Adaptive Exponential Recovery Load (ERL) Model (continued)
 
 - Nominal power withdrawals at reference voltage $V_0$: $P_0, Q_0$
@@ -1413,7 +1396,8 @@ md"""
 
 # ╔═╡ 011a1e50-0316-42ec-9295-eeee64b76299
 md"""
-## Why We Go Beyond Steady-State OPF
+## Wrap up
+### Why We Go Beyond Steady-State OPF
 
 In this chapter, we motivated from the physical principles and operation constraints to demonstrate that power systems are fundamentally dynamic. **The bigger picture:**
 - Even though steady-state analysis is helpful for many purposes and have lower computational burden, power systems are **dynamic systems.**
@@ -1423,7 +1407,7 @@ In this chapter, we motivated from the physical principles and operation constra
 
 # ╔═╡ 81952b3e-93c9-4179-8b12-5933d49749a6
 md"""
-## Four Building Blocks of System Dynamics
+### Four Building Blocks of System Dynamics
 
 Throughout this chapter, we have explored four fundamental components that govern power system dynamics:
 
@@ -1435,7 +1419,7 @@ Throughout this chapter, we have explored four fundamental components that gover
 
 # ╔═╡ a3b4c5d6-0894-4340-a18b-72f8e1204503
 md"""
-## Why We Need Dynamic Optimization (TSC-OPF)
+### Why We Need Dynamic Optimization (TSC-OPF)
 
 These building blocks come together in transient stability-constrained optimization. **Why we need optimization with system dynamics embedded (TSC-OPF):**
 - Steady-state OPF finds an economical operating point **only at equilibrium.**
@@ -1446,80 +1430,76 @@ These building blocks come together in transient stability-constrained optimizat
 # ╟─4866207c-0894-4340-a18b-72f8e1204424
 # ╟─a1b2c3d4-0894-4340-a18b-72f8e1204425
 # ╟─e6aa5227-91bd-4cec-9448-24384708a305
-# ╠═19dac419-2df3-4878-b7da-608e8ec1e53b
-# ╠═8ed6af99-1c5d-4d27-b60d-17d2e6c6ceff
-# ╠═f742f5f3-d9d3-4374-ac9e-17073c3a2f6d
-# ╠═ad8e9d79-e226-468e-9981-52b7cda7c955
-# ╠═fc329e51-e91c-4d83-b6fe-07a3bce44d5d
-# ╠═d767175f-290d-403e-99de-d3a8f2ccb5b5
-# ╠═c9d0e1f2-0894-4340-a18b-72f8e1204432
-# ╠═9d1ea9be-2d7b-4602-8a8e-8426ea31661a
-# ╠═71ba62e6-bcc1-4e9b-91cd-a8860ba0d2b5
-# ╠═7b4800c2-133d-4793-95b1-a654a4f19558
-# ╠═7961c1d1-3e82-49ea-8201-c5f82066d70d
+# ╟─19dac419-2df3-4878-b7da-608e8ec1e53b
+# ╟─8ed6af99-1c5d-4d27-b60d-17d2e6c6ceff
+# ╟─f742f5f3-d9d3-4374-ac9e-17073c3a2f6d
+# ╟─ad8e9d79-e226-468e-9981-52b7cda7c955
+# ╟─fc329e51-e91c-4d83-b6fe-07a3bce44d5d
+# ╟─d767175f-290d-403e-99de-d3a8f2ccb5b5
+# ╟─c9d0e1f2-0894-4340-a18b-72f8e1204432
+# ╟─9d1ea9be-2d7b-4602-8a8e-8426ea31661a
+# ╟─71ba62e6-bcc1-4e9b-91cd-a8860ba0d2b5
+# ╟─7b4800c2-133d-4793-95b1-a654a4f19558
+# ╟─7961c1d1-3e82-49ea-8201-c5f82066d70d
 # ╟─91b8a3e4-81ed-49fe-b785-4feacfd8788d
-# ╠═f72775b9-818c-4a9b-9b66-cfccd88e17ed
-# ╠═53ab9b31-78aa-49b6-9e24-df47aa80f25a
-# ╠═1e337cdf-8add-42ab-a62f-23069e34ec39
-# ╠═23dc8fd4-59a1-414f-a165-b509458abd18
-# ╠═5814ece5-51b3-4dba-953d-c1f4b6ab04a8
-# ╠═14499803-6315-4dfb-82f6-de4916e4ab57
-# ╠═c1d2e3f4-0894-4340-a18b-72f8e1204445
-# ╠═7fc7a97e-0364-42ce-9039-d3718359061d
-# ╠═ca8dc9ed-0974-4205-9af4-a21c8a7cb707
-# ╠═111d764c-c6e1-4b79-aad5-31a32fad0719
-# ╠═9716f6a5-54d6-4abc-b0df-82f5a30e0196
-# ╠═7212aae0-0e02-47eb-80c4-a708c4eb205c
-# ╠═a5b6c7d8-0894-4340-a18b-72f8e1204451
-# ╠═34595bd9-874e-4ca9-bf3c-3ebef9a37cec
-# ╠═a9f00e8c-205e-45a9-83d4-1dea5b7627c1
-# ╠═85c737d7-ace0-4b25-8d63-f35c318ccc5b
-# ╠═22d5c113-82f0-4598-8c47-ead1face730e
-# ╠═47e011b8-4fb8-4534-a504-ffe3009beb6e
-# ╠═a3786b2d-9951-440f-854c-dfd40ad727f1
-# ╠═c3d4e5f6-0894-4340-a18b-72f8e1204458
-# ╠═946ad231-4ddf-43a3-b2b9-95d502f4b5e9
-# ╠═64fce728-f80a-49de-a332-ca31139962cf
-# ╠═f6399741-9b5f-4bd3-bae7-6cc1ed1bd718
-# ╠═2a36f90d-6020-4a12-a1ff-d719214414bb
-# ╠═214eacc5-0b60-44b8-8a53-9cce369debdd
-# ╠═a7b8c9d0-0894-4340-a18b-72f8e1204464
-# ╠═6b64a495-6039-408c-91a9-4dfddf21d857
-# ╠═b5159081-3b0a-459a-9c5b-c2b4911d79e2
-# ╠═ad22ab28-884e-4c3b-8265-51a44685343d
-# ╠═01ebbe37-0681-47bb-b851-5f16b9f4aeb5
-# ╠═86d07665-753e-4dbe-aa84-5b23ec0a616f
-# ╠═8e4dc912-14ff-4290-8f96-926493e5ef81
-# ╠═c5d6e7f8-0894-4340-a18b-72f8e1204471
-# ╠═c0cc1b94-e651-40c2-8084-e9ebfad2a457
-# ╠═4702e992-a163-40f3-ab55-f9e8e848d0c7
-# ╠═1566dce2-fd36-4110-8220-97eefe043cbb
-# ╠═9bd48789-5d3d-495c-acd3-6586ae616136
-# ╠═3a911e1a-5ec9-4eb0-9ec5-4ee2502e5103
-# ╠═a9b0c1d2-0894-4340-a18b-72f8e1204477
-# ╠═abcd31d0-c6eb-4bc7-a752-83a8d7f6fda1
-# ╠═b16732b7-ec08-43c7-9c08-489c8c8bbecb
-# ╠═8ee16365-6d48-4073-9482-44dd58b7e338
-# ╠═f05940b2-5a30-46dc-8811-5f3d6b0c74a0
-# ╠═75deac76-f89c-4b84-a132-67591177f5dd
-# ╠═0a2c4c0a-c68e-4f21-afbb-1b80791ec166
-# ╠═c7d8e9f0-0894-4340-a18b-72f8e1204484
-# ╠═20d5d03f-0225-4d3c-b0d2-d7440340b821
-# ╠═37f242b9-454f-4361-a2e1-98acae57b6fe
+# ╟─f72775b9-818c-4a9b-9b66-cfccd88e17ed
+# ╟─53ab9b31-78aa-49b6-9e24-df47aa80f25a
+# ╟─1e337cdf-8add-42ab-a62f-23069e34ec39
+# ╟─23dc8fd4-59a1-414f-a165-b509458abd18
+# ╟─5814ece5-51b3-4dba-953d-c1f4b6ab04a8
+# ╟─14499803-6315-4dfb-82f6-de4916e4ab57
+# ╟─c1d2e3f4-0894-4340-a18b-72f8e1204445
+# ╟─7fc7a97e-0364-42ce-9039-d3718359061d
+# ╟─ca8dc9ed-0974-4205-9af4-a21c8a7cb707
+# ╟─111d764c-c6e1-4b79-aad5-31a32fad0719
+# ╟─9716f6a5-54d6-4abc-b0df-82f5a30e0196
+# ╟─7212aae0-0e02-47eb-80c4-a708c4eb205c
+# ╟─a5b6c7d8-0894-4340-a18b-72f8e1204451
+# ╟─34595bd9-874e-4ca9-bf3c-3ebef9a37cec
+# ╟─a9f00e8c-205e-45a9-83d4-1dea5b7627c1
+# ╟─85c737d7-ace0-4b25-8d63-f35c318ccc5b
+# ╟─22d5c113-82f0-4598-8c47-ead1face730e
+# ╟─47e011b8-4fb8-4534-a504-ffe3009beb6e
+# ╟─a3786b2d-9951-440f-854c-dfd40ad727f1
+# ╟─c3d4e5f6-0894-4340-a18b-72f8e1204458
+# ╟─946ad231-4ddf-43a3-b2b9-95d502f4b5e9
+# ╟─64fce728-f80a-49de-a332-ca31139962cf
+# ╟─f6399741-9b5f-4bd3-bae7-6cc1ed1bd718
+# ╟─2a36f90d-6020-4a12-a1ff-d719214414bb
+# ╟─214eacc5-0b60-44b8-8a53-9cce369debdd
+# ╟─a7b8c9d0-0894-4340-a18b-72f8e1204464
+# ╟─6b64a495-6039-408c-91a9-4dfddf21d857
+# ╟─b5159081-3b0a-459a-9c5b-c2b4911d79e2
+# ╟─ad22ab28-884e-4c3b-8265-51a44685343d
+# ╟─01ebbe37-0681-47bb-b851-5f16b9f4aeb5
+# ╟─86d07665-753e-4dbe-aa84-5b23ec0a616f
+# ╟─8e4dc912-14ff-4290-8f96-926493e5ef81
+# ╟─c5d6e7f8-0894-4340-a18b-72f8e1204471
+# ╟─c0cc1b94-e651-40c2-8084-e9ebfad2a457
+# ╟─4702e992-a163-40f3-ab55-f9e8e848d0c7
+# ╟─1566dce2-fd36-4110-8220-97eefe043cbb
+# ╟─9bd48789-5d3d-495c-acd3-6586ae616136
+# ╟─a9b0c1d2-0894-4340-a18b-72f8e1204477
+# ╟─abcd31d0-c6eb-4bc7-a752-83a8d7f6fda1
+# ╟─b16732b7-ec08-43c7-9c08-489c8c8bbecb
+# ╟─8ee16365-6d48-4073-9482-44dd58b7e338
+# ╟─f05940b2-5a30-46dc-8811-5f3d6b0c74a0
+# ╟─75deac76-f89c-4b84-a132-67591177f5dd
+# ╟─0a2c4c0a-c68e-4f21-afbb-1b80791ec166
+# ╟─c7d8e9f0-0894-4340-a18b-72f8e1204484
+# ╟─20d5d03f-0225-4d3c-b0d2-d7440340b821
+# ╟─37f242b9-454f-4361-a2e1-98acae57b6fe
 # ╠═4211a2c2-4a3a-4a63-8d2e-dc6c94e0cfc6
-# ╠═2644c1ad-c1aa-4b03-ab27-fb414c03e3af
-# ╠═8ca0ad91-2fb5-4e64-9f6f-5498fa39d44b
+# ╟─8ca0ad91-2fb5-4e64-9f6f-5498fa39d44b
 # ╠═a1b2c3d4-0894-4340-a18b-72f8e1204490
-# ╠═64252a52-551a-4119-9e6e-78a0b3338ef9
-# ╠═160fd7d9-a3c2-4f22-951e-deed6f32e09b
-# ╠═56b58c9f-f8ce-4117-8105-70083c23fde9
-# ╠═03d81d40-f285-47d6-bbf4-db3e8efc7bd1
-# ╠═a4b027e0-15e6-4097-acc9-358fb075fd7f
-# ╠═e93c6dc1-2f8d-4e2f-bbed-db926643f32a
-# ╠═c9d0e1f2-0894-4340-a18b-72f8e1204497
-# ╠═3f7130a0-51d6-4493-b07e-e5bf178ce834
-# ╠═18207180-a40b-4bb7-87bb-9a0752286cea
-# ╠═4d6fd1e2-9457-4f4c-84b1-62958a8b49de
-# ╠═011a1e50-0316-42ec-9295-eeee64b76299
-# ╠═81952b3e-93c9-4179-8b12-5933d49749a6
-# ╠═a3b4c5d6-0894-4340-a18b-72f8e1204503
+# ╟─160fd7d9-a3c2-4f22-951e-deed6f32e09b
+# ╟─56b58c9f-f8ce-4117-8105-70083c23fde9
+# ╟─03d81d40-f285-47d6-bbf4-db3e8efc7bd1
+# ╟─a4b027e0-15e6-4097-acc9-358fb075fd7f
+# ╟─e93c6dc1-2f8d-4e2f-bbed-db926643f32a
+# ╟─3f7130a0-51d6-4493-b07e-e5bf178ce834
+# ╟─18207180-a40b-4bb7-87bb-9a0752286cea
+# ╟─4d6fd1e2-9457-4f4c-84b1-62958a8b49de
+# ╟─011a1e50-0316-42ec-9295-eeee64b76299
+# ╟─81952b3e-93c9-4179-8b12-5933d49749a6
+# ╟─a3b4c5d6-0894-4340-a18b-72f8e1204503

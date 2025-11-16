@@ -1,8 +1,3 @@
-name = "DynamicOptimalControlNotebook"
-uuid = "6fd508a3-41c1-4c16-bb31-09a03e84fbc0"
-authors = [ "Shuaicheng Tong <shuaicheng.tong@example.com>",]
-version = "0.1.0"
-
 [deps]
 Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"

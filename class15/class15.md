@@ -8,11 +8,11 @@
 
 # Overview
 
-This chapter introduces the foundational dynamic behaviors of electric power systems and shows how they are incorporated into modern optimal control formulations such as Transient Stability–Constrained Optimal Power Flow (TSC-OPF). We begin with the physics of electromagnetic transients to motivate the formulation of TSC-OPF, move through generator and inverter dynamics, and conclude with dynamic load models that capture how demand responds during disturbances. Together, these components form the backbone required to understand, simulate, and optimize real-world power system behavior.
+This chapter introduces the foundation of electric power system dynamic behaviors and shows how they are incorporated into modern optimal control formulations such as Transient Stability–Constrained Optimal Power Flow (TSC-OPF). We begin with the physics of electromagnetic transients to motivate the formulation of TSC-OPF, move through generator and inverter dynamics, and conclude with dynamic load models that capture how demand responds during disturbances. Together, these components are key to understand, simulate, and optimize real-world power system.
 
 # Materials
 
-The chapter is implemented as a [Pluto notebook](https://learningtooptimize.github.io/LearningToControlClass/dev/class15/class15.html), which contains derivations, visuals, and algorhtmic examples. The [lecture slide](https://learningtooptimize.github.io/LearningToControlClass/dev/class15/class15_lecture.pdf) contains the material of the video recording.
+The chapter is implemented as a [Pluto notebook](https://learningtooptimize.github.io/LearningToControlClass/dev/class15/class15.html), which contains derivations, visuals, and algorhtmic examples. To use the interactive plot, please run the notebook locally. Refer to [Class 01 documentation](https://learningtooptimize.github.io/LearningToControlClass/dev/class01/class01/#Background-Material). In Step 3, run `Pkg.activate()` with the path of class15 folder. The [lecture slide](https://learningtooptimize.github.io/LearningToControlClass/dev/class15/class15_lecture.pdf) contains the material of the video recording.
 
 # Topics Covered
 
@@ -33,7 +33,6 @@ The chapter is implemented as a [Pluto notebook](https://learningtooptimize.gith
 - Virtual inertia and frequency droop control for renewable integration  
 
 ## Dynamic Load Models
-- Limitations of static OPF load representations  
 - Induction motor dynamics: slip, torque imbalance, and stalling behavior  
 - Voltage recovery models such as Exponential Recovery Load (ERL)  
 - Differences between physics-based motor models and empirical aggregate models  
@@ -46,11 +45,9 @@ The chapter is implemented as a [Pluto notebook](https://learningtooptimize.gith
 # Learning Objectives
 
 By the end of this chapter, readers will be able to:
-
-- Describe the physical origins of transients and how they propagate in networks  
+- Describe the physical origins of transients and how they propagate in power networks  
 - Explain generator swing dynamics and how they regulate grid frequency  
-- Understand how inverter controls emulate generator behavior for stability  
-- Distinguish between static and dynamic load models and when each is appropriate  
-- Interpret how system dynamics are embedded in TSC-OPF formulations  
+- Understand how inverter controls emulate generator behavior
+- Distinguish between static and dynamic load models and when each is appropriate
 - Understand the role of sensitivity analysis in dynamic optimal control
 

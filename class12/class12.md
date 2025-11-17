@@ -85,9 +85,9 @@ In this case, we can see that our $\mathcal G^\dagger$ can be given by $\mathcal
 
 We can, from this, see the first limitation of this technique: we're limited by how well is the approximation of $K_\mathcal WL_\mathcal W \approx I$. It turns out that, as described by [5], this is approximation is fairly general:
 Universal approximation:
-
-- Let $\mathcal X$ and $\mathcal Y$ be separable Banach spaces.
-- Let $\mathcal G: \mathcal X \rightarrow \mathcal Y$ be continuous.
+Let:
+- ‎ $\mathcal X$ and $\mathcal Y$ be separable Banach spaces.
+- ‎ $\mathcal G: \mathcal X \rightarrow \mathcal Y$ be continuous.
 For any $U\subset \mathcal X$ compact and $\epsilon > 0$, *there exists* continuous, linear maps $K_\mathcal X:\mathcal X \rightarrow \mathbb R^n$,  $L_\mathcal Y:\mathcal Y \rightarrow \mathbb R^m$, and $\varphi: \mathbb R^n \rightarrow \mathbb R^m$ such that:
 ```math
 \sup_{u\in U} \| \mathcal G(u)-\mathcal G^\dagger(u)\|_\mathcal Y < \epsilon

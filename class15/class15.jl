@@ -4,6 +4,17 @@
 using Markdown
 using InteractiveUtils
 
+macro bind(def, element)
+    #! format: off
+    return quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+    #! format: on
+end
+
 # ╔═╡ 4866207c-0894-4340-a18b-72f8e1204424
 begin
 	class_dir = @__DIR__
@@ -20,6 +31,7 @@ begin
 	using JuMP
 	using Ipopt
 	using Plots
+	using DifferentialEquations
 end
 
 # ╔═╡ e6aa5227-91bd-4cec-9448-24384708a305
@@ -1056,7 +1068,58 @@ md"""
 - Other problems: semiconductor ratings, thermal limits, hard to tune $M_{\text{virtual}}$, cost, legacy devices, etc.
 
 **Why this is such a big deal:** renewables can now respond to a grid-wide drop in frequency because it can behave almost like a synchronous generator through control law
+
+## Demo of swing equation / virtual inertia response:
+- When there's a positive power imbalance, the frequency will increase.
+- Larger inertia slows down the rate at which frequency rises. This shows up as a curve that rises more gently (less sharply concave) because a heavier system resists acceleration more.
+- Increasing damping reduces the steady-state frequency deviation for a given imbalance and allows the system to settle faster. Higher damping provides a stronger corrective force that pulls frequency back toward nominal. 
+- In the plot, we will see it makes the plot level off sooner.
 """
+
+# ╔═╡ e14c2b45-3a7d-4e27-9c13-79ae514b1881
+@bind M Slider(0.5:0.5:10.0, default=5.0, show_value=true)
+
+# ╔═╡ 6ff3fd90-23cd-4cd0-95cf-d4e1d5ac3bdf
+@bind D Slider(0.0:0.1:5.0, default=1.0, show_value=true)
+
+# ╔═╡ b32a299d-4d0a-4e8b-b576-15bb32acad24
+@bind ΔP Slider(-0.5:0.05:0.5, default=0.2, show_value=true)
+
+# ╔═╡ 4db9cfa4-66c7-4b71-b0b3-5c16eaa2bb9e
+md"""
+### Interactive: Swing Equation / Virtual Inertia Response
+
+Use the sliders above to adjust:
+
+- **M** — inertia (or virtual inertia)  
+- **D** — damping  
+- **ΔP** — power imbalance (positive = deficit in electrical power, negative = surplus)
+
+The plot shows the **frequency deviation** response over time.
+"""
+
+# ╔═╡ a0b43f28-8e17-4633-8eab-b9554e05c8f6
+begin
+    # Nonlinear swing-like ODE: M * dω/dt + D*ω = ΔP
+    function swing!(dω, ω, p, t)
+        M, D, ΔP = p
+        dω[1] = (ΔP - D*ω[1]) / M
+    end
+
+    ω0 = [0.0]  # initial frequency deviation
+    p = (M, D, ΔP)
+    tspan = (0.0, 10.0)
+
+    prob = ODEProblem(swing!, ω0, tspan, p)
+    sol  = solve(prob, Tsit5())
+
+    plot(sol.t, [u[1] for u in sol.u],
+        xlabel = "Time (s)",
+        ylabel = "Frequency deviation",
+        title  = "Generator Swing / Virtual Inertia Frequency Response",
+        legend = false)
+end
+
 
 # ╔═╡ c7d8e9f0-0894-4340-a18b-72f8e1204484
 md"""
@@ -1450,6 +1513,11 @@ These building blocks come together in transient stability-constrained optimizat
 # ╟─f05940b2-5a30-46dc-8811-5f3d6b0c74a0
 # ╟─75deac76-f89c-4b84-a132-67591177f5dd
 # ╟─0a2c4c0a-c68e-4f21-afbb-1b80791ec166
+# ╟─e14c2b45-3a7d-4e27-9c13-79ae514b1881
+# ╟─6ff3fd90-23cd-4cd0-95cf-d4e1d5ac3bdf
+# ╟─b32a299d-4d0a-4e8b-b576-15bb32acad24
+# ╟─4db9cfa4-66c7-4b71-b0b3-5c16eaa2bb9e
+# ╟─a0b43f28-8e17-4633-8eab-b9554e05c8f6
 # ╟─c7d8e9f0-0894-4340-a18b-72f8e1204484
 # ╟─20d5d03f-0225-4d3c-b0d2-d7440340b821
 # ╟─37f242b9-454f-4361-a2e1-98acae57b6fe

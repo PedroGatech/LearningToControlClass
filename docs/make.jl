@@ -19,6 +19,7 @@ plutos = [
     joinpath(repo_dir, "class03", "class3_pluto_notebook.html"),
     joinpath(repo_dir, "class05", "class05.html"),
     joinpath(repo_dir, "class08", "class08.html"),
+    joinpath(repo_dir, "class11", "class11.html"),
     joinpath(repo_dir, "class15", "class15.html"),
 ]
 
@@ -93,7 +94,7 @@ makedocs(
         "Class 8" => "class08/class08.md",
         "Class 9" => "class09/class09.md",
         "Class 10" => "class10/class10.md",
-        # "Class 11" => "class11/class11.md",
+        "Class 11" => "class11/class11.md",
         "Class 12" => "class12/class12.md",
         "Class 13" => "class13/class13.md",
         # "Class 14" => "class14/class14.md",
@@ -109,7 +110,17 @@ end
 
 rm(joinpath(repo_dir, "docs", "src", "class01"), force=true)
 rm(joinpath(repo_dir, "docs", "src", "class02"), force=true)
+rm(joinpath(repo_dir, "docs", "src", "class04"), force=true)
 rm(joinpath(repo_dir, "docs", "src", "class05"), force=true)
+rm(joinpath(repo_dir, "docs", "src", "class06"), force=true)
+rm(joinpath(repo_dir, "docs", "src", "class07"), force=true)
+rm(joinpath(repo_dir, "docs", "src", "class08"), force=true)
+rm(joinpath(repo_dir, "docs", "src", "class09"), force=true)
+rm(joinpath(repo_dir, "docs", "src", "class10"), force=true)
+rm(joinpath(repo_dir, "docs", "src", "class11"), force=true)
+rm(joinpath(repo_dir, "docs", "src", "class12"), force=true)
+rm(joinpath(repo_dir, "docs", "src", "class13"), force=true)
+rm(joinpath(repo_dir, "docs", "src", "class15"), force=true)
 
 # In case we want to generate HTML from Pluto notebooks in CI
 # plutos = [

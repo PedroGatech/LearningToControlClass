@@ -137,14 +137,14 @@ Let:
 - $\mathcal G^\dagger$ is the composition of non-linear operators: $\mathcal G^\dagger=S_1\circ \text{...} \circ S_L$ 
 	- In the linear case, as described before, $S_1 = K_\mathcal X$, $S_L = K_\mathcal Y$ and they're connected through multiple $\varphi_j$.
 The above definition *looks a lot* like the typical definition of NNs, where each one of the $S_l$ is a layer of your NN. And, as we're going to see, it is! At least it is a generalization of the definition of NN to function space.
-\[cite] *et al.* proposed to create each one of this $S_l$ as follows:
+[9] proposed to create each one of this $S_l$ as follows:
 ```math
 S_l(a)(x) = \sigma_l\bigg( W_la(x) + b_l + \int_\Omega\mathrm dz \ \kappa_l(x,z)a(z)  \bigg), \ \ \ \ x \in \Omega
 ```
 where:
 - $\sigma_l:\mathbb R^k\rightarrow\mathbb R^k$ is the non-linear activation function.
 - $W_l\in\mathbb R^k$ is a term related to a "residual network".
-	- This term is not necessary for convergence, but it's credited to help with convergence speed \[cite].
+	- This term is not necessary for convergence, but it's credited to help with convergence speed.
 - $b_l\in\mathbb R^k$ is the bias term.
 - $\kappa_l:\Omega\times\Omega\rightarrow\mathbb R^k$ is the kernel function.
 
@@ -197,7 +197,7 @@ where $W_\kappa$ are the (trainable) weights for the kernel, and $j$ represents 
 We can see this "low-pass filter" behavior of the kernel represented on the "zoom" of the general diagram (b), where the high frequencies vanish, while the remaining low frequencies are multiplied by a certain weight.
 After this "filtering" and weighting, we apply the inverse FFT get the $\mathcal F^{-1}\{\hat\kappa_l(v) \cdot\hat a(v)\}$ term.
 
-Meanwhile we also have the so called "1D Convolution", represented by $W_la(x)$, with trainable $W_l$. It is not strictly necessary to be used, but it helps with convergence speed \[cite], and the (also trainable) bias term $b_l$, suppressed on the figure. The sum of all the aforementioned terms is then passed by a non-linear activation function $\sigma$, defined _a priori_.
+Meanwhile we also have the so called "residual network", represented by $W_la(x)$, with trainable $W_l$. It is not strictly necessary to be used, but it helps with convergence speed, and the (also trainable) bias term $b_l$, suppressed on the figure. The sum of all the aforementioned terms is then passed by a non-linear activation function $\sigma$, defined _a priori_.
 
 And, finally, T (defined _a priori_) of these layers are concatenated, before being projected down by the layer **Q**, to produce the output $u(x)$.
 

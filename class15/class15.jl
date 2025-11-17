@@ -302,7 +302,7 @@ Note that steady-state phasor analysis no longer holds due to the time-varying n
 md"""
 ## Sinusoidal steady state
 
-To connect time-domain transients with frequency-domain analysis, we assume all quantities have angular frequency $\omega$ for sinusoidal steady-state analysis:
+To connect time-domain transients with frequency-domain analysis, we assume all quantities have angular frequency $\omega$ to extract the phasors in steady-state. The current in time-domain is:
 
 ```math
 \begin{align}
@@ -325,13 +325,10 @@ Substitute into $v_L(t) = L\,\frac{di}{dt}$:
 v_L(t) &= \operatorname{Re}\!\left\{ (j\omega L I)\, e^{j\omega t} \right\}.
 \end{align}
 ```
-"""
 
-# ╔═╡ 14499803-6315-4dfb-82f6-de4916e4ab57
-md"""
 ## Phasor (frequency-domain) relation
 
-From the time-domain analysis, we can extract the phasor representation. By definition, the **phasor** is the complex amplitude multiplying $e^{j\omega t}$.
+We are now ready to extract the phasor representation of voltage. By definition, the **phasor** is the complex amplitude multiplying $e^{j\omega t}$.
 
 From the previous expression,
 
@@ -341,7 +338,7 @@ v_L(t) &= \operatorname{Re}\!\left\{ (j\omega L I)\, e^{j\omega t} \right\},
 \end{align}
 ```
 
-so the **voltage phasor** is
+the **voltage phasor** is
 
 ```math
 \begin{align}
@@ -352,13 +349,11 @@ so the **voltage phasor** is
 
 # ╔═╡ c1d2e3f4-0894-4340-a18b-72f8e1204445
 md"""
-## Capacitor law: from time domain to phasor domain
+## Capacitor law: from time domain to phasor
 
 Similar to inductors, capacitors also exhibit transient behavior. Let's derive the capacitor relationships:
 
-**Physical basis:**
-A capacitor stores energy in an **electric field**.
-* The stored charge $q(t)$ is proportional to voltage $v(t)$: 
+A capacitor stores energy in an **electric field**. The stored charge $q(t)$ is proportional to voltage $v(t)$: 
 
 ```math
 q(t) = C\,v(t)
@@ -368,11 +363,8 @@ q(t) = C\,v(t)
 ```math
 i_C(t) = \frac{dq(t)}{dt} = C\,\frac{dv(t)}{dt}
 ```
-"""
 
-# ╔═╡ 7fc7a97e-0364-42ce-9039-d3718359061d
-md"""
-## Capacitor law: from time domain to phasor domain (continued)
+With $v(t)=\operatorname{Re}\{V e^{j\omega t}\}$,
 
 ```math
 \begin{align}
@@ -390,15 +382,17 @@ Hence, the **phasor relationship** is:
 \boxed{Z_C = \frac{1}{j\omega C}}.
 \end{align}
 ```
-
-You could of course derive admittance and impedance for inductors following similar steps. This is how you go from time domain to phasor domain. Note that the above is for ideal inductors and capacitors.
+where $Y_C$ is the capacitive admittance and $Z_C$ is the capacitive impedance, and susceptance $B_C$ is imaginary part of $Y_C$.
+The real part of $Y_C$ is conductance $G_C$, which is used in steady-state AC optimal power flow problems.
+You could of course derive admittance and impedance for inductors following similar steps. The above steps connect the time-domain and phasor domain. Note that the above is for ideal inductors and capacitors.
 """
 
 # ╔═╡ ca8dc9ed-0974-4205-9af4-a21c8a7cb707
 md"""
 ## More realistic transmission line model
 
-So far, we've considered lumped circuit elements without considering their position on the line. In real transmission lines, the voltage $v(x,t)$ and current $i(x,t)$ vary **both** in time and along the line coordinate $x$.
+So far, we've considered circuit elements without considering their coordinates on the line. 
+In real transmission lines, however, voltage $v(x,t)$ and current $i(x,t)$ vary **both** in time and along the line coordinate $x$.
 
 Their spatial derivatives represent how these quantities change **per unit length:**
 
@@ -410,17 +404,10 @@ Their spatial derivatives represent how these quantities change **per unit lengt
 ```
 
 **Real lines are lossy:**
-- Conductor series resistance causes Ohmic losses (heat dissipation) $\Rightarrow$ adds $-R'\,i(x,t)$.
+- Conductor series resistance causes Ohmic losses (heat dissipation) in voltage $\Rightarrow$ adds $-R'\,i(x,t)$.
 - Current leakage due to shunt conductance $\Rightarrow$ adds $-G'\,v(x,t)$.
 
-Hence, the full **telegrapher's equations** become:
-"""
-
-# ╔═╡ 111d764c-c6e1-4b79-aad5-31a32fad0719
-md"""
-## More on realistic transmission line model
-
-Combining the effects of inductance, capacitance, resistance, and conductance, we arrive at the complete telegrapher's equations:
+Hence, the full **telegrapher's equations** are:
 
 ```math
 \begin{align}
@@ -428,15 +415,16 @@ Combining the effects of inductance, capacitance, resistance, and conductance, w
 \frac{\partial i(x,t)}{\partial x} &= -C'\frac{\partial v(x,t)}{\partial t} - G'\,v(x,t).
 \end{align}
 ```
-
-You can think about $R'$ and $G'$ as damping terms. $L$ and $C$ relate to energy storage, and $R$ and $G$ relate to energy dissipation.
+where $L'$ and $C'$ are the inductance and capacitance per unit length, and $R'$ and $G'$ are the resistance and conductance per unit length.
+You can think about $R'$ and $G'$ as damping terms to account for losses and leakage. 
+$L,C$ relate to energy storage, and $R,G$ relate to energy dissipation.
 """
 
 # ╔═╡ 9716f6a5-54d6-4abc-b0df-82f5a30e0196
-md"
+md"""
 ## How the above was derived
 
-**Setup:** Consider a small transmission line segment between $x$ and $x+dx$.
+Consider a small line segment between $x$ and $x+dx$.
 - Coordinate $x$ increases in the direction of current flow ($+x$).
 - Current flowing in $+x$ direction: $i(x,t)$.
 - Voltage between conductors (top to bottom) at position $x$: $v(x,t)$.
@@ -455,11 +443,6 @@ v(x,t) - v(x+dx,t) = -\frac{\partial v(x,t)}{\partial x}\,dx.
 \text{Inductive drop} &:\; L'\,\frac{\partial i(x,t)}{\partial t}\,dx.
 \end{align}
 ```
-"
-
-# ╔═╡ 7212aae0-0e02-47eb-80c4-a708c4eb205c
-md"""
-## How the above was derived (continued)
 
 **3. Apply Kirchhoff Voltage Law:**
 
@@ -488,7 +471,7 @@ The negative sign indicates that voltage **drops** in the $+x$ direction due to 
 md"""
 # How does physics relate to optimization?
 
-## Transient Stability Constrained Optimal Power Flow (TSCOPF)
+We now connect the time-domain physics to **Transient Stability–Constrained Optimal Power Flow (TSC-OPF)**, where the optimization must respect both steady-state **and** dynamic constraints after a disturbance.
 """
 
 # ╔═╡ 34595bd9-874e-4ca9-bf3c-3ebef9a37cec
@@ -525,12 +508,7 @@ The dynamic constraints (5)-(7) embed the time-parametrized physics of transient
 - Enforce the physics of transient after a disturbance.
 
 **Eq. (6):** embed dynamics into steady-state constraints.
-- The steady-state constraints $g(x,y,p)$ have same physical laws as (2) e.g. KCL but now applied at every instant $t$'s states $x(t), y(t)$ to extend to the dynamics.
-"""
-
-# ╔═╡ 85c737d7-ace0-4b25-8d63-f35c318ccc5b
-md"""
-## Dynamic and Transient Constraints: (7)
+- The steady-state constraints $g(x,y,p)$ have same physical laws as (2) e.g. KCL but now must hold at every instant $t$'s states $x(t), y(t)$.
 
 The final set of constraints ensures that the system remains within safe operating limits throughout the transient:
 
@@ -545,7 +523,7 @@ h(x(t), y(t)) \le 0, \quad \forall t
   - Bus voltage magnitudes stay within limits.
   - Rotor angle differences remain stable.
   - Line thermal limits respected.
-- Ensures **transient stability** under all time steps during instability.
+- Ensures **transient stability** under all time steps during disturbance.
 """
 
 # ╔═╡ 22d5c113-82f0-4598-8c47-ead1face730e
@@ -556,10 +534,10 @@ Solving TSCOPF is computationally challenging due to the nonlinear nature of AC 
 
 **Indirect (variational) Methods:**
 - Based on Pontryagin's Maximum Principle.
-- Replace the differential equations of dynamics with inequalities that approximate the behavior in steady-state by linearizing into static conditions.
+- Replace the differential equations of dynamics with inequalities that approximate the behavior in steady-state by linearizing into additional static conditions.
 - Examples: energy or Lyapunov functions or impose stability margin constraints on linearized Jacobian.
 
-Instead of having to integrate over time, you get back a static nonlinear optimization problem that can be solved using standard solvers.
+Instead of having to integrate over time, we get back a static nonlinear optimization problem that can be solved using standard solvers.
 
 **In practice:**
 - Mainly used for planning/screening/preventive security dispatch due to loss in accuracy.
@@ -571,7 +549,7 @@ Instead of having to integrate over time, you get back a static nonlinear optimi
 md"""
 ## Direct Method: Simultaneous Discretization/Constraint Transcription
 
-An approach directly discretizes the differential equations. **Main idea:** Converts the time-dependent diff. eq. into a finite set of algebraic constraints before solving the optimization problem so transient stability simulator can be reused.
+An approach that directly discretizes the differential equations. **Main idea:** Converts the time-dependent diff. eq. into a finite set of algebraic constraints before solving the optimization problem so transient stability simulator can be reused.
 
 **Discretization approach:**
 - The simulation horizon is divided into multiple time steps $t_0, t_1, \dots, t_N$.
@@ -592,7 +570,7 @@ An approach directly discretizes the differential equations. **Main idea:** Conv
 md"""
 ## Direct Method: Multiple Shooting
 
-Multiple shooting offers a more numerically stable alternative to simultaneous discretization. The multiple shooting method divides the simulation horizon into smaller time segments $[t_0,t_1], [t_1,t_2], \dots, [t_{N-1},t_N]$.
+Multiple shooting offers a more numerically stable alternative to simultaneous discretization. It divides the simulation horizon into smaller time segments $[t_0,t_1], [t_1,t_2], \dots, [t_{N-1},t_N]$.
 
 - Each segment starts from its own initial condition $x_i(t_i)$ and is integrated forward using the diff. eq. $\dot{x}=f(x,y,p),\, 0=g(x,y,p)$ to obtain the predicted final state $\hat{x}_i(t_{i+1})$.
 - Constraint to ensure continuity between segments:
@@ -601,23 +579,25 @@ Multiple shooting offers a more numerically stable alternative to simultaneous d
   x_{i+1}(t_{i+1}) = \hat{x}_i(t_{i+1}),
   ```
 
-**Constraint form:**
+Abstractly, the constraint form is:
 
 ```math
 s_i = S_i(s_{i-1},p), \quad \forall i \in 1,\dots,N_S,
 ```
 
-where $S_i(\cdot)$ is an implicit function that can be numerically integrated over segment $i$.
+where $S_i(\cdot)$ is an implicit function that can be numerically integrated over segment $i$. This can be used for variables $x,y$.
 
-**Pros:** Each segment can be integrated independently, so the Jacobian of the resulting NLP is better conditioned because the coupling is limited to adjacent segments instead of the entire trajectory. This segmentation improves numerical stability and allows for more efficient large-scale computation.
+**Pros:** Each segment can be integrated independently, so the Jacobian of the resulting NLP is better conditioned because the coupling is limited to segment boundaries instead of the entire trajectory. This segmentation improves numerical stability and allows for more efficient large-scale computation.
 """
 
 # ╔═╡ c3d4e5f6-0894-4340-a18b-72f8e1204458
 md"""
 ## Trajectory Sensitivity Analysis of TSC-OPF
 
-Both direct methods require gradient information. Sensitivity analysis provides this efficiently. 
-**Purpose:** Quantify how system variables $x(t),y(t)$ changes with respect to small variations in control variables $p$ or initial conditions. Recall that with different control settings $p$, the entire transient trajectory changes and we would need to simulate the dynamics again to see what happens. This is expensive. Sensitivity analysis tells you how the trajectory and stability margins change with small changes in $p: \frac{\partial x}{\partial p}$ without running a new full simulation for every small perturbation.
+Both direct methods require gradient information. Sensitivity analysis can provide this efficiently. 
+**Purpose:** Quantify how system variables $x(t),y(t)$ changes with respect to small variations in control variables $p$ or initial conditions. 
+Recall that with different control settings $p$, the entire transient trajectory changes and we would need to simulate the dynamics again to see the consequences.
+This is expensive. Sensitivity analysis tells you how the trajectory and stability margins change with small variations in $p: \frac{\partial x}{\partial p}$ without running the full simulation for every small perturbation.
 
 **Relation to numerical methods:**
 - These sensitivities provide gradient information for solvers, which is used for both multiple shooting and constraint transcription.
@@ -629,7 +609,7 @@ md"""
 
 The forward sensitivity method computes gradients by integrating sensitivity equations forward in time:
 
-- Computed by performing a forward integration of the sensitivity equations alongside the original diff. eq. system.
+- Perform a forward integration of the sensitivity equations alongside the original diff. eq. system.
 - Efficient when the number of parameters is small.
 - The computational complexity is $\mathcal{O}(n_p)$, since $n_p$ forward integrations are required to compute the sensitivities.
 
@@ -654,17 +634,12 @@ with initial condition
 ```math
 s(t_0) = \frac{\partial x(t_0)}{\partial p}.
 ```
-"""
-
-# ╔═╡ 64fce728-f80a-49de-a332-ca31139962cf
-md"""
-## Forward Sensitivity Method (continued)
 
 - Each parameter $p_i$ perturbs the system differently.
-- Forward method tracks this by integrating a new "copy" of the linearized system, which shares the same Jacobian as the original DAE.
+- Forward method tracks this by integrating a new "copy" of the linearized system, which shares the same Jacobian (including state dynamics and algebraic equations of KCL etc.) as the original differential equations.
 
 **Pros and cons:**
-- **Pros:** Simple and accurate, efficient when number of parameters is small.
+- **Pros:** Simple to implement, accurate efficient when number of parameters is small.
 - **Cons:** Computational cost grows linearly with number of parameters.
 """
 
@@ -672,7 +647,7 @@ md"""
 md"""
 ## Adjoint Method
 
-When the number of parameters is large, the forward method becomes expensive. The adjoint method offers an efficient alternative that only needs one backward integration in time to compute the sensitivities.
+When the number of parameters is large, the forward method becomes expensive. The adjoint method is an alternative that only needs one backward integration in time to compute the sensitivities.
 
 **Formulation:**
 
@@ -704,17 +679,10 @@ When the number of parameters is large, the forward method becomes expensive. Th
   ```
 
   where $\lambda(T)=0$.
-"""
-
-# ╔═╡ 2a36f90d-6020-4a12-a1ff-d719214414bb
-md"""
-## Adjoint Method and wrapping up numerical methods for TSC-OPF and sensitivity analysis
-
-To summarize the adjoint method:
 
 **Pros:**
 - Efficient when the number of parameters is large.
-- The gradient is obtained in one pass.
+- The gradient is obtained in one backward integration.
 
 **Cons:**
 - Higher memory cost due to storage of trajectory data and state variables in backward integration.
@@ -1034,7 +1002,7 @@ The swing equation framework extends beyond traditional generators. We previousl
 2. Gets desired power output from an operator or solved from a market
 3. Adjust its AC current output to deliver the desired power output at voltage and frequency GIVEN by the grid
 
-**What's the problem with it?** No control over other parameters like voltage and frequency. The power output is only stable if the rest of the grid is stable.
+The problem is it has no control over other parameters like voltage and frequency. The power output is only stable if the rest of the grid maintains a good reference.
 """
 
 # ╔═╡ f05940b2-5a30-46dc-8811-5f3d6b0c74a0
@@ -1043,7 +1011,7 @@ md"""
 
 Grid-forming inverters represent a more advanced control paradigm that enables renewables to provide grid support:
 
-- The inverter doesn't blindly follow the grid frequency, it defines its own reference voltage and frequency like a voltage source
+- It behaves as controlled voltage source that defines its own reference voltage and frequency
 - Let the frequency shift slightly to reflect power imbalance between the renewable generation and the rest of the grid, so other machines (generators) know to ramp up or down
 - Able to define its own frequency is the key for the renewable to behave like a synchronous generator, and we now have the ability to model it in a swing equation by giving it a virtual mass defined by the local frequency
 
@@ -1129,6 +1097,12 @@ If reactive demand $\uparrow$ (voltage dips), generator/inverter increases react
 
 - Interpretation of $1/K_p$ = MW per Hz: "How much active power do I add if frequency drops by 0.1 Hz?"
 - Interpretation of $1/K_q$ = Mvar per V → "How much reactive power do I add if voltage drops by 0.01 pu?"
+
+## Summary: Generator and Inverter Dynamics
+
+Synchronous generators naturally provide inertia and adjust their output through physical dynamics, giving the grid its inherent frequency stability.
+Inverters lack this physical behavior, so control algorithms such as virtual inertia and droop control are introduced to let them share changes in load and maintain frequency and voltage—just as generators have always done. 
+Droop control is essential because it enables multiple devices to automatically coordinate their power output. With generator and inverter dynamics in place, we now turn to **dynamic load models**, which describe how electricity demand behaves during disturbances.
 """
 
 # ╔═╡ 37f242b9-454f-4361-a2e1-98acae57b6fe
@@ -1284,7 +1258,7 @@ This model is typically used when there's a fast transient or stalling, and the 
 md"""
 ## Exponential Recovery Load (ERL): Motivation and Concept
 
-Beyond individual motor dynamics, aggregate load behavior exhibits recovery patterns. **Goal:** Represent aggregate load behavior during voltage recovery after a disturbance.
+Beyond individual motor dynamics, aggregate load behavior exhibits exponential recovery patterns. **Goal:** Represent aggregate load behavior during voltage recovery after a disturbance.
 
 **Empirical Observation:**
 - When voltage dips, total active and reactive loads drop immediately.
@@ -1323,10 +1297,7 @@ Q_d &= x_q\!\left(\frac{V}{V_0}\right)^{N_{qt}}.
 
 **Parameters:**
 - Internal recovery states (how much of the load has recovered): $x_p, x_q$
-- Time constants — larger values $\Rightarrow$ slower recovery: $T_p, T_q$
-
-## Adaptive Exponential Recovery Load (ERL) Model (continued)
-
+- Time constants (larger values $\Rightarrow$ slower recovery): $T_p, T_q$
 - Nominal power withdrawals at reference voltage $V_0$: $P_0, Q_0$
 - Transient exponents (immediate voltage sensitivity): $N_{pt}, N_{qt}$. How sharply load power reacts immediately when voltage changes (the short-term dip).
 - Steady-state exponents (long-term voltage dependence): $N_{ps}, N_{qs}$. How much the load power changes in the long term after voltage settles to a new level.
@@ -1447,25 +1418,18 @@ These building blocks come together in transient stability-constrained optimizat
 # ╟─1e337cdf-8add-42ab-a62f-23069e34ec39
 # ╟─23dc8fd4-59a1-414f-a165-b509458abd18
 # ╟─5814ece5-51b3-4dba-953d-c1f4b6ab04a8
-# ╟─14499803-6315-4dfb-82f6-de4916e4ab57
 # ╟─c1d2e3f4-0894-4340-a18b-72f8e1204445
-# ╟─7fc7a97e-0364-42ce-9039-d3718359061d
 # ╟─ca8dc9ed-0974-4205-9af4-a21c8a7cb707
-# ╟─111d764c-c6e1-4b79-aad5-31a32fad0719
 # ╟─9716f6a5-54d6-4abc-b0df-82f5a30e0196
-# ╟─7212aae0-0e02-47eb-80c4-a708c4eb205c
 # ╟─a5b6c7d8-0894-4340-a18b-72f8e1204451
 # ╟─34595bd9-874e-4ca9-bf3c-3ebef9a37cec
 # ╟─a9f00e8c-205e-45a9-83d4-1dea5b7627c1
-# ╟─85c737d7-ace0-4b25-8d63-f35c318ccc5b
 # ╟─22d5c113-82f0-4598-8c47-ead1face730e
 # ╟─47e011b8-4fb8-4534-a504-ffe3009beb6e
 # ╟─a3786b2d-9951-440f-854c-dfd40ad727f1
 # ╟─c3d4e5f6-0894-4340-a18b-72f8e1204458
 # ╟─946ad231-4ddf-43a3-b2b9-95d502f4b5e9
-# ╟─64fce728-f80a-49de-a332-ca31139962cf
 # ╟─f6399741-9b5f-4bd3-bae7-6cc1ed1bd718
-# ╟─2a36f90d-6020-4a12-a1ff-d719214414bb
 # ╟─214eacc5-0b60-44b8-8a53-9cce369debdd
 # ╟─a7b8c9d0-0894-4340-a18b-72f8e1204464
 # ╟─6b64a495-6039-408c-91a9-4dfddf21d857
@@ -1489,9 +1453,9 @@ These building blocks come together in transient stability-constrained optimizat
 # ╟─c7d8e9f0-0894-4340-a18b-72f8e1204484
 # ╟─20d5d03f-0225-4d3c-b0d2-d7440340b821
 # ╟─37f242b9-454f-4361-a2e1-98acae57b6fe
-# ╠═4211a2c2-4a3a-4a63-8d2e-dc6c94e0cfc6
+# ╟─4211a2c2-4a3a-4a63-8d2e-dc6c94e0cfc6
 # ╟─8ca0ad91-2fb5-4e64-9f6f-5498fa39d44b
-# ╠═a1b2c3d4-0894-4340-a18b-72f8e1204490
+# ╟─a1b2c3d4-0894-4340-a18b-72f8e1204490
 # ╟─160fd7d9-a3c2-4f22-951e-deed6f32e09b
 # ╟─56b58c9f-f8ce-4117-8105-70083c23fde9
 # ╟─03d81d40-f285-47d6-bbf4-db3e8efc7bd1

@@ -6,5 +6,51 @@
 
 ---
 
-Add notes, links, and resources below.
+# Overview
+
+This chapter introduces the foundational dynamic behaviors of electric power systems and shows how they are incorporated into modern optimal control formulations such as Transient Stability–Constrained Optimal Power Flow (TSC-OPF). We begin with the physics of electromagnetic transients to motivate the formulation of TSC-OPF, move through generator and inverter dynamics, and conclude with dynamic load models that capture how demand responds during disturbances. Together, these components form the backbone required to understand, simulate, and optimize real-world power system behavior.
+
+# Materials
+
+The chapter is implemented as a [Pluto notebook](https://learningtooptimize.github.io/LearningToControlClass/dev/class15/class15.html), which contains derivations, visuals, and algorhtmic examples. The [lecture slide](https://learningtooptimize.github.io/LearningToControlClass/dev/class15/class15_lecture.pdf) contains the material of the video recording.
+
+# Topics Covered
+
+## Transients and Electromagnetic Dynamics
+- Physical origin of transients in power system 
+- Connection between Faraday's law, inductors/capacitors, and transient behavior  
+- Relation of time-domain differential equations to steady-state phasor models  
+- Introduction to transmission-line dynamics and telegrapher’s equations  
+
+## Generator Swing Equation
+- Rotor acceleration and deceleration under power imbalance  
+- Role of inertia in stabilizing frequency  
+- Per-unit formulation and damping effects  
+
+## Inverter Dynamics and Grid Control
+- Differences between synchronous generators and renewable inverters  
+- Grid-following vs. grid-forming behavior  
+- Virtual inertia and frequency droop control for renewable integration  
+
+## Dynamic Load Models
+- Limitations of static OPF load representations  
+- Induction motor dynamics: slip, torque imbalance, and stalling behavior  
+- Voltage recovery models such as Exponential Recovery Load (ERL)  
+- Differences between physics-based motor models and empirical aggregate models  
+
+## Transient Stability–Constrained Optimal Power Flow (TSC-OPF)
+- Time-domain constraints ensuring system stability during disturbances  
+- Solution methods such as direct transcription and multiple-shooting formulations  
+- Forward and adjoint sensitivity analysis for efficient gradient calculation
+
+# Learning Objectives
+
+By the end of this chapter, readers will be able to:
+
+- Describe the physical origins of transients and how they propagate in networks  
+- Explain generator swing dynamics and how they regulate grid frequency  
+- Understand how inverter controls emulate generator behavior for stability  
+- Distinguish between static and dynamic load models and when each is appropriate  
+- Interpret how system dynamics are embedded in TSC-OPF formulations  
+- Understand the role of sensitivity analysis in dynamic optimal control
 

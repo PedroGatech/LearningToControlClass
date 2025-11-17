@@ -76,18 +76,18 @@ question_box(md"What is the partial derivative of $f$ with respect to $w_n$? Wha
 # ╔═╡ 23ff3286-be75-42b8-8327-46ebb7d8b538
 md"Write you answer bellow in place of `missing`"
 
+# ╔═╡ a33c9e20-0139-4e72-a6a1-d7e9641195cb
+begin
+	∂f╱∂ωₙ = missing # should be a function of w, a, n
+	∇f = missing # should be a function of w, a
+end
+
 # ╔═╡ c9afb329-2aa8-48e2-8238-8f6f3977b988
 begin
 N = 10
 n = 5
 a = rand(N)
 println("a=", a)
-end
-
-# ╔═╡ a33c9e20-0139-4e72-a6a1-d7e9641195cb
-begin
-	∂f╱∂ωₙ = a[n] # should be a function of w, a, n
-	∇f = a # should be a function of w, a
 end
 
 # ╔═╡ 529c2464-4611-405b-8ff7-b9de8158aa2d
@@ -130,7 +130,10 @@ f_2(w_1, w_2, w_3) = w_1 w_2 + w_2 w_3 + w_3 w_1
 "
 
 # ╔═╡ 611c28fa-9542-11ea-1751-fbdedcfb7690
-ans2 = Zygote.gradient(f, w)[1]
+begin
+	f2(w) = w[1] * w[2] + w[2] * w[3] + w[3] * w[1]
+	∇f2 = (w) -> missing # replace missing with the function that computes the gradient of `f2`
+end
 
 # ╔═╡ da942073-32d5-4de5-82c0-271a0cb0e903
 md" **Lets check our answer (with Automatic Differentiation - AD):**
@@ -143,7 +146,6 @@ begin
 	w2 = rand(3) # Random vector of size 3
 	zygote_ans = f2'(w2)
 end
-
 
 # ╔═╡ e6948424-ce04-4bed-b9d1-ab6c5a513ffa
 begin
@@ -172,43 +174,11 @@ y = A v
 # ╔═╡ 397ffb27-b0c4-408a-8c89-b022e6924ee0
 question_box(md"Argue that $y$ can be written as a linear combination of the columns of $A$.")
 
-# ╔═╡ 8ddcf507-380c-44f7-b2e1-e4153f8b5281
-md"
-The above equation can be written as:
-
-```math
-y = v_1 a_1 + v_2 a_2 + \dots + v_n a_n
-```
-
-Each column is scaled by the corresponding entry of \(v\), so \(y\) is exactly a linear combination of the columns of \(A\).
-
-"
-
 # ╔═╡ f1346c3e-727a-488d-bfc8-54ffacd26987
 md"### d) Vector Squared"
 
 # ╔═╡ e0642f42-9545-11ea-14ee-fde52cb54ccc
 question_box(md" Given any vector $v \in R^N$ with real entries, show that $v^T v = 0 \iff v = 0$")
-
-# ╔═╡ dbddcc2d-3ffc-453a-97fa-604e05d47742
-md"
-
-```math
-v^T v = \sum_{i=1}^{N} v_i^2.
-```
-
-Since each
-```math
-(v_i^2 \ge 0)
-
-```
-the sum is zero if and only if every (vi = 0). Therefore,
-
-```math
-v^T v = 0 \iff v = 0.
-``` 
-
-"
 
 # ╔═╡ 19ff8d36-9547-11ea-0e08-e5cdd8338673
 md"
@@ -264,12 +234,11 @@ md" **Lets check our answer:**"
 begin
 
 # Our Eigenvalues 
-😀 = [2.0, 4.0]
+😀 = missing
 
 # Our Eigenvectors
 
-🥤= [-1  1;
-           1  1] ./ sqrt(2)
+🥤= missing
 
 end
 
@@ -311,11 +280,9 @@ end
 
 # ╔═╡ 17a2fa3a-4dfc-45df-955a-068bbd1c225c
 begin
-    eigA = eigen(inv(A))
-
-    V₋₁ = eigA.vectors
-    Λ₋₁ = eigA.values
-
+	# Add your answer here
+	V₋₁ = missing
+	Λ₋₁ = missing
 end
 
 # ╔═╡ 1fec2e0a-c108-43a1-a4f3-557af9e215ab
@@ -352,31 +319,6 @@ How many solutions when $rank(A)<N$? What can you say about Null$(A)$?
 How many solutions when $rank(A)=M$? What is the objective value?
 ")
 
-# ╔═╡ 8c00dbcd-3c68-4806-b556-e70e900c4237
-md"""
-**Case 1: rank(A) = N**  
-- \(A\) has full column rank.  
-- The normal equations \($A^T A x = A^T y$\) have a **unique solution**:  
-\[
-$x^* = (A^T A)^{-1} A^T y$
-\]
-
-**Case 2: rank(A) < N**  
-- \(A\) does not have full column rank.  
-- There are **infinitely many solutions**.  
-- Any solution can be written as  
-\[
-$x = x_0 + z, \quad z \in \text{Null}(A)$
-\]  
-where \(x_0\) is a particular solution and \(\text{Null}(A)\) is the null space of \(A\).
-
-**Case 3: rank(A) = M**  
-- Full row rank. If \(M < N\) (underdetermined), there are **infinitely many solutions**.  
-- If \(M = N\) (square and full rank), there is a unique solution.  
-- The **objective value** \(|y - $A x^*\|_2^2 = 0$\) if a solution exists.
-"""
-
-
 # ╔═╡ 53b889b3-edf4-4eb2-ac4f-478b51117bf5
 md"""
 #### i) Regularized Least--Squares
@@ -391,36 +333,8 @@ The regularized least-squares problem is
 # ╔═╡ 92eda57b-a791-4507-bd30-5e81dcdf8946
 question_box(md"For which $Rank(A)$ this is useful?")
 
-# ╔═╡ 0256309d-a293-4bf0-a464-f1e9bc031721
-md"""
-The regularization term $(\delta \|x\|_2^2)$ is useful when \(A\) does not have full column rank (\(\text{Rank}(A) < N\)).  
-
-It ensures that $(A^T A + \delta I)$ is invertible, so the solution  
-
-$x^* = (A^T A + \delta I)^{-1} A^T y$
-
-is unique and numerically stable.  
-- Even if \(A\) is full rank but nearly singular, regularization improves conditioning and prevents very large components in $(x^*)$.
-"""
-
-
 # ╔═╡ 890ac713-4636-4ee3-9d3f-fb661f944576
 question_box(md"Closed form solution?")
-
-# ╔═╡ 9289c936-78db-45c3-a7d1-4d1d43b6a21c
-md"""
-The closed-form solution of the regularized least-squares problem  
-
-
-$\min_{x \in \mathbb{R}^{N}} \|y - A x\|_2^2 + \delta \|x\|_2^2$  
-
-is given by:
-
-$x^* = (A^T A + \delta I)^{-1} A^T y$
-
-- Here, $(\delta > 0)$ ensures that $(A^T A + \delta I)$ is invertible, even if (A) is rank-deficient.
-"""
-
 
 # ╔═╡ 0e3331b5-f7fc-4666-a617-d1b5f99aa162
 question_box(md"""
@@ -432,22 +346,6 @@ Show that, as δ → 0, the regularized solution converges to the minimum--norm 
 \end{aligned}
 ```
 """)
-
-# ╔═╡ 16dde6b4-233f-45ff-ace1-623f82ebeab2
-md"""
-The regularized least-squares solution is  
-
-$x_\delta^* = (A^T A + \delta I)^{-1} A^T y$
-
-- As $(\delta \to 0)$, the solution becomes  
-
-
-$x_0^* = (A^T A)^{-1} A^T y$
-
-- This is exactly the minimum-norm solution of the original least-squares problem $(A^T A x = A^T y)$ when \(A\) is rank-deficient.  
-
-"""
-
 
 # ╔═╡ 7a0dc457-c4b4-4893-a36f-366cac98c349
 begin
@@ -501,10 +399,8 @@ end
 Function to fit a polynomial of order `M` to sample points `(t,y)` using least-squares.
 """
 function polynomial_fit(tm::Vector{T}, ym::Vector{T}, M::Int)::Function where {T<:Real}
-    A = hcat([tm.^k for k in 0:M]...)  # hcat gives a proper Matrix
-    c = A \ ym
-    
-    return (t) -> sum(c[k+1] * t^k for k in 0:M)
+	# Write your answer here in place if missing
+	return (t) -> missing
 end
 
 # ╔═╡ 5db09226-55de-4fe6-b630-0d9748500579
@@ -519,17 +415,7 @@ end
 
 # ╔═╡ 1a27508f-fd91-4a40-82d0-74753d3d1acd
 begin
-    M = 15   # pick one M
-    p = polinomials[5]  # corresponding polynomial
-
-    t_samples = t_q1(M)
-    y_samples = f_q1.(t_samples)
-
-    # The plot itself is the last expression
-    plot(ts, f_q1.(ts), xlabel="t", ylabel="y",
-         label="f(t)", title="Polynomial interpolation, M=$M") |> 
-    (plt -> plot!(plt, ts, p.(ts), label="Interpolant") |> 
-             (plt -> scatter!(plt, t_samples, y_samples, color=:red, label="Data points")))
+	# Plot here
 end
 
 # ╔═╡ f8ca0eaa-6fc4-40eb-9723-f8445cd145dd
@@ -575,44 +461,12 @@ end
 
 # ╔═╡ 3b4e9c20-44fd-4bcc-ab61-231cab22f6ff
 # Implement and replace here 
-cobic_spline = (t) -> begin
-    M = 8
-    xs = range(-1, 1, length=M+1)
-    f = [f_q1(x) for x in xs]  
-    h = diff(xs)
-    n = length(xs)
-
-    A = zeros(n,n)
-    rhs = zeros(n)
-    A[1,1] = 2*h[1]; A[1,2] = h[1]; rhs[1] = 3*((f[2]-f[1])/h[1] - 0)
-    A[n,n-1] = h[end]; A[n,n] = 2*h[end]; rhs[n] = 3*(0 - (f[end]-f[end-1])/h[end])
-
-    for i in 2:n-1
-        A[i,i-1] = h[i-1]
-        A[i,i]   = 2*(h[i-1]+h[i])
-        A[i,i+1] = h[i]
-        rhs[i]   = 3*((f[i+1]-f[i])/h[i] - (f[i]-f[i-1])/h[i-1])
-    end
-
-    M2 = A \ rhs
-    j = searchsortedlast(xs, t)
-    j = clamp(j, 1, n-1)
-    hi = xs[j+1]-xs[j]
-
-    return ((M2[j]/(6*hi))*(xs[j+1]-t)^3 +
-            (M2[j+1]/(6*hi))*(t-xs[j])^3 +
-            (f[j]/hi - M2[j]*hi/6)*(xs[j+1]-t) +
-            (f[j+1]/hi - M2[j+1]*hi/6)*(t-xs[j]))
-end
-
+cobic_spline = (t) -> missing
 
 # ╔═╡ 8155e2d3-5a82-42d4-8450-297f88da190a
 begin
-    xs = range(-1, 1, length=200)            
-    ys = [cobic_spline(x) for x in xs]    
-    plot(xs, ys, label="Cubic Spline", lw=2)
+	# Plot here
 end
-
 
 # ╔═╡ 002cc5c1-094e-4133-9108-451ff74e8f2f
 let
@@ -665,29 +519,8 @@ end
 
 # ╔═╡ 6b006a1e-e53c-490e-ab61-772a168f0064
 begin
-	# Quadratic B-spline basis function
-	b2 = t -> begin
-	    if -1.5 <= t <= -0.5
-	        return (t + 1.5)^2 / 2
-	    elseif -0.5 <= t <= 0.5
-	        return -t^2 + 3/4
-	    elseif 0.5 <= t <= 1.5
-	        return (t - 1.5)^2 / 2
-	    else
-	        return 0.0
-	    end
-	end
-	
-	# Target points and values
-	t_vals = 0:4
-	f_target = [-1, -1, 2, 5, 1]
-	
-	# Build matrix B with entries B[i,k] = b2(t_i - k)
-	B = [b2(t - k) for t in t_vals, k in 0:4]
-	
-	# Solve linear system for alpha
-	alpha = B \ f_target
-
+	# Write your answer here
+	alpha = missing # This should a vector of floats
 end
 
 # ╔═╡ 4ffc2c46-7c78-4afa-9ea3-888b1790b291
@@ -747,23 +580,6 @@ Demonstrate that $$|G\mathbf{x}|_2<|\mathbf{x}|_2$$ by proving $$G\mathbf{x}$$ i
 """)
 )
 
-# ╔═╡ 09dfb1fa-dec2-45dc-affa-9e47a0d7a09b
-md"""
-
-$A[i,n] = b_2(i-n), \quad i,n = 0,\dots,N-1$  
-- Each row corresponds to \(f(t_i)\).  
-- Each column corresponds to coefficient $(\alpha_n)$.  
-- Only the main diagonal and the two neighboring diagonals are nonzero (tridiagonal) because $(b_2(t))$ has compact support $([-3/2, 3/2])$.  
-
-Invertibility:  
-- Write \(A = I + G\), where \(G\) has the off-diagonal contributions.  
-- For any vector $(\mathbf{x} \neq 0)$:  
-$[|A \mathbf{x}\|_2 = \|\mathbf{x} + G\mathbf{x}\|_2 \ge \|\mathbf{x}\|_2 - |G\mathbf{x}\|_2 > 0$  
-- Each component of $(G\mathbf{x})$ is a sum of two neighbors multiplied by $(b_2(\pm1) < 1/2)$, so $(\|G\mathbf{x}\|_2 < \|\mathbf{x}\|_2)$.  
-- Therefore, $(A \mathbf{x} = 0 \implies \mathbf{x} = 0)$, so \(A\) is invertible for any \(N\).
-"""
-
-
 # ╔═╡ 4634c856-9553-11ea-008d-3539195970ea
 md"## Final notes"
 
@@ -791,38 +607,36 @@ And others that are useful for Machine Learning:
 # ╔═╡ Cell order:
 # ╟─b129ba7c-953a-11ea-3379-17adae34924c
 # ╟─22c65fc5-08f9-4675-89c5-20ff685c35b3
-# ╠═9fffca86-aec9-4c26-bced-3edaa1af9a22
+# ╟─9fffca86-aec9-4c26-bced-3edaa1af9a22
 # ╟─a481b9a8-306a-4434-b5d0-e8fc7bba8482
 # ╠═00cc1e5e-f10e-4559-b9d9-8aba44eb493e
 # ╟─4d88b926-9543-11ea-293a-1379b1b5ae64
-# ╠═c9941b84-575c-4b98-94d2-72b59327a6a8
+# ╟─c9941b84-575c-4b98-94d2-72b59327a6a8
 # ╟─ac439448-a766-4cb2-b76f-b4733cd14195
 # ╟─23ff3286-be75-42b8-8327-46ebb7d8b538
 # ╠═a33c9e20-0139-4e72-a6a1-d7e9641195cb
 # ╠═c9afb329-2aa8-48e2-8238-8f6f3977b988
-# ╠═529c2464-4611-405b-8ff7-b9de8158aa2d
+# ╟─529c2464-4611-405b-8ff7-b9de8158aa2d
 # ╠═a6bd5fd0-f856-4f1e-8e06-4e16639d436c
 # ╠═ebd908a2-98c5-4abb-84cf-9a286779a736
 # ╟─570f87c7-f808-442e-b22c-d1aaec61922d
 # ╟─aeb3a6bc-9540-11ea-0b8f-6d37412bfe68
 # ╠═611c28fa-9542-11ea-1751-fbdedcfb7690
 # ╟─da942073-32d5-4de5-82c0-271a0cb0e903
-# ╟─44c9e09f-4fb6-42b2-a265-3adedfa9b2d2
-# ╟─9972495f-79f4-4612-99db-d97c3e9d57b4
+# ╠═44c9e09f-4fb6-42b2-a265-3adedfa9b2d2
+# ╠═9972495f-79f4-4612-99db-d97c3e9d57b4
 # ╟─e6948424-ce04-4bed-b9d1-ab6c5a513ffa
-# ╠═6f7eecec-9543-11ea-1284-dd52fce3ecca
+# ╟─6f7eecec-9543-11ea-1284-dd52fce3ecca
 # ╟─397ffb27-b0c4-408a-8c89-b022e6924ee0
-# ╟─8ddcf507-380c-44f7-b2e1-e4153f8b5281
 # ╟─f1346c3e-727a-488d-bfc8-54ffacd26987
 # ╟─e0642f42-9545-11ea-14ee-fde52cb54ccc
-# ╟─dbddcc2d-3ffc-453a-97fa-604e05d47742
 # ╟─19ff8d36-9547-11ea-0e08-e5cdd8338673
 # ╟─ee268cb3-c7b4-4696-a8d2-54efe9ab56a7
 # ╟─9967004a-cd54-4b57-a813-c70634dece88
-# ╟─b8700fc7-3e81-44ac-abf2-d62bf96dcece
+# ╠═b8700fc7-3e81-44ac-abf2-d62bf96dcece
 # ╟─644e3970-4b24-4392-822b-0d11e5cbeb89
 # ╟─0cd18898-359f-4d27-a4b9-63dc0b416981
-# ╟─eac62fea-954e-11ea-2768-39ce6f4059ab
+# ╠═eac62fea-954e-11ea-2768-39ce6f4059ab
 # ╟─01bc0cf1-8759-49c1-b69c-edc690e23f8c
 # ╟─f27f90c2-954f-11ea-3f93-17acb2ce4280
 # ╟─0914879e-af78-4e1a-baf6-4f8fcad4d5ce
@@ -831,34 +645,29 @@ And others that are useful for Machine Learning:
 # ╟─1fec2e0a-c108-43a1-a4f3-557af9e215ab
 # ╟─a6fbd265-f78a-4914-b9ec-f0596db10a4f
 # ╟─ef54ff3d-f713-46c3-a758-b36166f9e898
-# ╟─8c00dbcd-3c68-4806-b556-e70e900c4237
 # ╟─53b889b3-edf4-4eb2-ac4f-478b51117bf5
-# ╠═92eda57b-a791-4507-bd30-5e81dcdf8946
-# ╟─0256309d-a293-4bf0-a464-f1e9bc031721
+# ╟─92eda57b-a791-4507-bd30-5e81dcdf8946
 # ╟─890ac713-4636-4ee3-9d3f-fb661f944576
-# ╟─9289c936-78db-45c3-a7d1-4d1d43b6a21c
-# ╠═0e3331b5-f7fc-4666-a617-d1b5f99aa162
-# ╠═16dde6b4-233f-45ff-ace1-623f82ebeab2
+# ╟─0e3331b5-f7fc-4666-a617-d1b5f99aa162
 # ╟─7a0dc457-c4b4-4893-a36f-366cac98c349
 # ╠═9afd68f1-0205-40cd-bf33-20fba8069055
 # ╟─7a49dd41-dca3-4a88-84c5-0bb00016bb8e
 # ╟─f7e30484-c36c-4624-a38e-1ca0338dc735
 # ╠═78558f34-fd3a-4a72-ae30-6966d13a8990
 # ╠═5db09226-55de-4fe6-b630-0d9748500579
-# ╟─1a27508f-fd91-4a40-82d0-74753d3d1acd
+# ╠═1a27508f-fd91-4a40-82d0-74753d3d1acd
 # ╟─f8ca0eaa-6fc4-40eb-9723-f8445cd145dd
 # ╟─42210cd5-73bb-4d38-ac37-1896ed61327d
 # ╟─8253c6cb-ec11-473c-a24f-5be4d645b0cd
 # ╟─590847e9-35a0-4efd-9963-7db770715192
-# ╟─3b4e9c20-44fd-4bcc-ab61-231cab22f6ff
-# ╟─8155e2d3-5a82-42d4-8450-297f88da190a
+# ╠═3b4e9c20-44fd-4bcc-ab61-231cab22f6ff
+# ╠═8155e2d3-5a82-42d4-8450-297f88da190a
 # ╟─002cc5c1-094e-4133-9108-451ff74e8f2f
 # ╟─33a6337a-2d74-49a7-bc3a-8f92b78ff16d
 # ╟─9a170bfa-5ce5-46a5-9024-16394f51289b
-# ╟─6b006a1e-e53c-490e-ab61-772a168f0064
+# ╠═6b006a1e-e53c-490e-ab61-772a168f0064
 # ╟─4ffc2c46-7c78-4afa-9ea3-888b1790b291
 # ╟─ad73cc63-2872-431f-803d-8a986993fce2
-# ╠═09dfb1fa-dec2-45dc-affa-9e47a0d7a09b
 # ╟─4634c856-9553-11ea-008d-3539195970ea
 # ╟─4d0ebb46-9553-11ea-3431-2d203f594815
 # ╟─d736e096-9553-11ea-3ba5-277afde1afe7

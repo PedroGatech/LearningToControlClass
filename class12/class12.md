@@ -8,17 +8,17 @@
 
 ## Notations and definitions
 Let's start by setting up some notations:
-- Derivatives $\dfrac{\partial}{\partial t}$ are going to be written as $\partial_t$, and, in the case of derivatives **w.r.t. time**, they could be written as $\partial_t x=\dot x$.
-- Integrals $\int \{\cdot\} \ \mathrm dt$ are going to be written as $\int \mathrm dt \ \{\cdot\}$.
+- ‎Derivatives $\dfrac{\partial}{\partial t}$ are going to be written as $\partial_t$, and, in the case of derivatives **w.r.t. time**, they could be written as $\partial_t x=\dot x$.
+- ‎Integrals $\int \{\cdot\} \ \mathrm dt$ are going to be written as $\int \mathrm dt \ \{\cdot\}$.
 
 And having some definitions:
-- **Vectors** are *lists of numbers*, i.e., a vector $v$ lives in $\mathbb R^{d_v}$, and can be thought as a list of $d_v$ numbers, all in $\mathbb R$. More generally, vectors could live in a generic *vector space* $V$, so we would have $v\in V$. 
-- **Functions** are vector-to-vector mapping, i.e., a function $f$ brings a $v \in \mathbb R^{d_v}$ to a $w \in \mathbb R^{d_w}$, and we define that as $f: \mathbb R^{d_v} \rightarrow \mathbb R^{d_w}$.  More generally, functions could operate on a generic *vector space* $V$ and $W$, so we would have $f: V \rightarrow W$. 
-- **Operators** are function-to-functions mapping, i.e., an operator $A$ brings an $f:\mathbb R^{d_{v1}} \rightarrow \mathbb R^{d_{w1}}$ to a $g: \mathbb R^{d_{v2}} \rightarrow \mathbb R^{d_{w2}}$. More generally, operators could operate on generic *function spaces*, so we would have an operator $A$ bringing an $f:V_1 \rightarrow W_1$ to a $g:V_2 \rightarrow W_2$. 
+- ‎**Vectors** are *lists of numbers*, i.e., a vector $v$ lives in $\mathbb R^{d_v}$, and can be thought as a list of $d_v$ numbers, all in $\mathbb R$. More generally, vectors could live in a generic *vector space* $V$, so we would have $v\in V$. 
+- ‎**Functions** are vector-to-vector mapping, i.e., a function $f$ brings a $v \in \mathbb R^{d_v}$ to a $w \in \mathbb R^{d_w}$, and we define that as $f: \mathbb R^{d_v} \rightarrow \mathbb R^{d_w}$.  More generally, functions could operate on a generic *vector space* $V$ and $W$, so we would have $f: V \rightarrow W$. 
+- ‎**Operators** are function-to-functions mapping, i.e., an operator $A$ brings an $f:\mathbb R^{d_{v1}} \rightarrow \mathbb R^{d_{w1}}$ to a $g: \mathbb R^{d_{v2}} \rightarrow \mathbb R^{d_{w2}}$. More generally, operators could operate on generic *function spaces*, so we would have an operator $A$ bringing an $f:V_1 \rightarrow W_1$ to a $g:V_2 \rightarrow W_2$. 
 
 Key differences:
-- A vector is *naturally* discrete. Therefore, the input-output pair for functions are also *naturally* discrete. 
-- A function is *naturally* continuous. Therefore, the input-output pair for operators are also *naturally* continuous.
+- ‎A vector is *naturally* discrete. Therefore, the input-output pair for functions are also *naturally* discrete. 
+- ‎A function is *naturally* continuous. Therefore, the input-output pair for operators are also *naturally* continuous.
 
 It is said that Neural Networks (NN) are **universal function approximators** [1,2], in this section we're going to create the idea of **universal operator approximators**, that map functions to functions, using something called **Neural Operators**.
 
@@ -29,15 +29,15 @@ In a similar way we can think about a Neural Operator $\mathcal G^\dagger: \math
 When putting into a computer we are going to need to mesh our function, otherwise we'd not be able to process it. But we're going to think about functions when designing the architecture of these Neural Operators.
 
 **Why approximate operators?** Let's start with a parallel with image processing. Imagine that I have a Convolutional NN (CNN) that take as an input a (discrete) $256\times256$ image (let's imagine it in grayscale for simplicity). The input to this CNN would then be a $v \in \mathbb R^{256 \times 256}$, where each element $v_i \in \mathbb R \ ; v_i \in [0,1]$. Although this is a typical architecture for image processing [3], and it has been around since 1989 [4], it has a couple of limitations:
-- The input **has to** be $256\times256$, the need of different dimension leads to a new NN and a new training.
-- In case of regression, the output **has to** a fixed dimension, the need of different dimension leads to a new NN and a new training.
+- ‎The input **has to** be $256\times256$, the need of different dimension leads to a new NN and a new training.
+- ‎In case of regression, the output **has to** a fixed dimension, the need of different dimension leads to a new NN and a new training.
 For the case of image processing, where there's no trivial underlying function behind the image, we cannot take advantage of the use of Neural Operators, but in the case of distributions of physical quantities, e.g., temperature, where there's a underlying function behind it, we can leverage the use of Neural Operators to understand distribution function, and make predictions/controls based on it, decoupling the parametrization $\Theta$ from the discretization of the data. [5] *et al.* compared the errors of two networks: U-Net (NN topology) and PCA-Net (Neural operator topology), that were trained on different discretizations of the *same underlying function*, and the result is shown below:
 
 ![Alt text](Figures/unetvspca.png)
 
 This brings a concept (that we'll try to keep with our definition of Neural Operators) called **Discretization Invariance**:
-- When we have Discretization Invariance we de-couple the parameters and the cost from the discretization, i.e., when changing the discretization the error doesn't vary.
-- If our model is Discretization Invariable, we can use information at different discretizations to train, and we can transfer parameters learned for one discretization to another, that leads to something called "zero-shot super-resolution", that basically consists of training into a smaller discretization and predicting into a bigger one, due to the Discretization Invariance. This concept, together with its limitations, will be discussed in the "Fourier Neural Operator" section.
+- ‎When we have Discretization Invariance we de-couple the parameters and the cost from the discretization, i.e., when changing the discretization the error doesn't vary.
+- ‎If our model is Discretization Invariable, we can use information at different discretizations to train, and we can transfer parameters learned for one discretization to another, that leads to something called "zero-shot super-resolution", that basically consists of training into a smaller discretization and predicting into a bigger one, due to the Discretization Invariance. This concept, together with its limitations, will be discussed in the "Fourier Neural Operator" section.
  
 # Operator basics
 Let the operator $\mathcal G: \mathcal X \rightarrow \mathcal Y$, where $\mathcal X$ and  are separable Banach spaces (mathematical way of saying that $\mathcal X$ and $\mathcal Y$ are spaces of functions) of vector-valued functions:
@@ -94,8 +94,8 @@ For any $U\subset \mathcal X$ compact and $\epsilon > 0$, *there exists* continu
 ```
 Average approximation:
 Let: 
-- $\mathcal X$ be separable Banach spaces, and $\mu \in \mathcal P(\mathcal X)$ be a probability measure in $\mathcal X$.
-- $\mathcal G \in L_\mu^p(\mathcal X;\mathcal Y)$ for some $1\leq p < \infty$
+- ‎ $\mathcal X$ be separable Banach spaces, and $\mu \in \mathcal P(\mathcal X)$ be a probability measure in $\mathcal X$.
+- ‎ $\mathcal G \in L_\mu^p(\mathcal X;\mathcal Y)$ for some $1\leq p < \infty$
 If $\mathcal Y$ is separable Hilbert space, and $\epsilon > 0$, *there exists* continuous, linear maps $K_\mathcal X:\mathcal X \rightarrow \mathbb R^n$,  $L_\mathcal Y:\mathcal Y \rightarrow \mathbb R^m$, and $\varphi: \mathbb R^n \rightarrow \mathbb R^m$ such that:
 ```math
 \| \mathcal G(u)-\mathcal G^\dagger(u)\|_{L_\mu^p(\mathcal X;\mathcal Y)} < \epsilon
@@ -105,12 +105,12 @@ Let's start by giving two classes of Neural Operators, the Principal Component A
 ## PCA
 First proposed by [6], we're going to define the PCA-NET approximation by analyzing our input and output spaces using a PCA-like technique.
 Let:
-- $\mathcal X$ and $\mathcal Y$ be separable Banach spaces, and let $x\in K\subset\mathcal X$, with $K$ compact.
-- $\mathcal G$ (the operator that we're trying to approximate) be continuous.
-- $\varphi_j:\mathbb R^n \times \Theta \rightarrow \mathbb R^m$ be multiple neural networks.
-- $\xi_1,\text{...},\xi_n$ be the PCA basis functions of the input space $\mathcal X$.
-	- The operator $K_\mathcal X$ for a given $x\in \mathcal X$ would then be $K_\mathcal X(x) :=\mathrm Lx = \{\langle\xi_j,x\rangle\}_j$.
-- $\psi_1,\text{...},\psi_m$ be the PCA basis functions of the output space $\mathcal Y$.
+- ‎$\mathcal X$ and $\mathcal Y$ be separable Banach spaces, and let $x\in K\subset\mathcal X$, with $K$ compact.
+- ‎$\mathcal G$ (the operator that we're trying to approximate) be continuous.
+- ‎$\varphi_j:\mathbb R^n \times \Theta \rightarrow \mathbb R^m$ be multiple neural networks.
+- ‎$\xi_1,\text{...},\xi_n$ be the PCA basis functions of the input space $\mathcal X$.
+	- ‎The operator $K_\mathcal X$ for a given $x\in \mathcal X$ would then be $K_\mathcal X(x) :=\mathrm Lx = \{\langle\xi_j,x\rangle\}_j$.
+- ‎$\psi_1,\text{...},\psi_m$ be the PCA basis functions of the output space $\mathcal Y$.
 
 The final approximation $\mathcal G^\dagger_{\text{PCA}}:\mathcal X \times \Theta \rightarrow \mathcal Y$ is then given by:
 ```math
@@ -133,20 +133,20 @@ Proposed by [7], the DeepONet generalizes the idea of PCA-NET, by means of *lear
 One of the big problems of these approaches is the fact $L_\mathcal Y$ is a linear combination of the {$\psi_j$}. This leads to the need of an doubly exponential growth in the amount of data, when compared to $n$ (the size of the PCA basis functions of the input space $\mathcal X$), to achieve convergence [8]. To overcome this difficulty, we're going to generalize this idea of linear approximation of operators to the non-linear case.
 
 Let:
-- $\mathcal X$ and $\mathcal Y$ be function spaces over $\Omega \subset \mathbb R^d$
-- $\mathcal G^\dagger$ is the composition of non-linear operators: $\mathcal G^\dagger=S_1\circ \text{...} \circ S_L$ 
-	- In the linear case, as described before, $S_1 = K_\mathcal X$, $S_L = K_\mathcal Y$ and they're connected through multiple $\varphi_j$.
+- ‎$\mathcal X$ and $\mathcal Y$ be function spaces over $\Omega \subset \mathbb R^d$
+- ‎$\mathcal G^\dagger$ is the composition of non-linear operators: $\mathcal G^\dagger=S_1\circ \text{...} \circ S_L$ 
+	- ‎In the linear case, as described before, $S_1 = K_\mathcal X$, $S_L = K_\mathcal Y$ and they're connected through multiple $\varphi_j$.
 The above definition *looks a lot* like the typical definition of NNs, where each one of the $S_l$ is a layer of your NN. And, as we're going to see, it is! At least it is a generalization of the definition of NN to function space.
 [9] proposed to create each one of this $S_l$ as follows:
 ```math
 S_l(a)(x) = \sigma_l\bigg( W_la(x) + b_l + \int_\Omega\mathrm dz \ \kappa_l(x,z)a(z)  \bigg), \ \ \ \ x \in \Omega
 ```
 where:
-- $\sigma_l:\mathbb R^k\rightarrow\mathbb R^k$ is the non-linear activation function.
-- $W_l\in\mathbb R^k$ is a term related to a "residual network".
-	- This term is not necessary for convergence, but it's credited to help with convergence speed.
-- $b_l\in\mathbb R^k$ is the bias term.
-- $\kappa_l:\Omega\times\Omega\rightarrow\mathbb R^k$ is the kernel function.
+- ‎$\sigma_l:\mathbb R^k\rightarrow\mathbb R^k$ is the non-linear activation function.
+- ‎$W_l\in\mathbb R^k$ is a term related to a "residual network".
+	- ‎This term is not necessary for convergence, but it's credited to help with convergence speed.
+- ‎$b_l\in\mathbb R^k$ is the bias term.
+- ‎$\kappa_l:\Omega\times\Omega\rightarrow\mathbb R^k$ is the kernel function.
 
 The main distinction between this approach and the traditional NN approach is the $\kappa_l$ term, instead of the traditional weights, and the fact that the input $a(x)$ is a *function*, instead of a vector like the traditional NNs.
 Different selections of $\kappa_l$ generate different classes of these non-linear Neural Operators, but we're going to focus on the transform $\kappa_l$, more specifically the Fourier Neural Operator and the Garlekin Transformer.

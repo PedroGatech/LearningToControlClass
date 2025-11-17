@@ -20,7 +20,7 @@ Key differences:
 - A vector is *naturally* discrete. Therefore, the input-output pair for functions are also *naturally* discrete. 
 - A function is *naturally* continuous. Therefore, the input-output pair for operators are also *naturally* continuous.
 
-It is said that Neural Networks (NN) are **universal function approximators** \[cite], in this section we're going to create the idea of **universal operator approximators**, that map functions to functions, using something called **Neural Operators**.
+It is said that Neural Networks (NN) are **universal function approximators** [1,2], in this section we're going to create the idea of **universal operator approximators**, that map functions to functions, using something called **Neural Operators**.
 
 A NN $\mathcal N$ can be thought as a general **function** $\mathcal N: X \times \Theta \rightarrow Y$, where $X$ and $Y$ are vector spaces, and $\Theta$ is the parameter space. So we take elements $x \in X$ and we *learn* how to map those onto $y\in Y$, by means of changing the parameters $\theta \in \Theta$. That way, we can approximate any function (that's where the "universal function approximator" comes from) that maps $X \rightarrow Y$. 
 In a similar way we can think about a Neural Operator $\mathcal G^\dagger: \mathcal X \times \Theta \rightarrow \mathcal Y$, where $\mathcal X$ and $\mathcal Y$ are function spaces, and $\Theta$ is the parameter space. Now, instead of learning how to map *vectors*, we're going to learn the mapping of *functions*. This general idea will be expanded further.
@@ -28,10 +28,10 @@ In a similar way we can think about a Neural Operator $\mathcal G^\dagger: \math
 **Why are functions important?** Everything in the real world is a function! If we want to predict the airflow around a car, the stress caused by deforming a metal bar, the temperature of a reactor, the weather (and the list goes on), we would need to use functions.
 When putting into a computer we are going to need to mesh our function, otherwise we'd not be able to process it. But we're going to think about functions when designing the architecture of these Neural Operators.
 
-**Why approximate operators?** Let's start with a parallel with image processing. Imagine that I have a Convolutional NN (CNN) that take as an input a (discrete) $256\times256$ image (let's imagine it in grayscale for simplicity). The input to this CNN would then be a $v \in \mathbb R^{256 \times 256}$, where each element $v_i \in \mathbb R \ ; v_i \in [0,1]$. Although this is a typical architecture for image processing \[cite], and it has been around since _year_ \[cite], it has a couple of limitations:
+**Why approximate operators?** Let's start with a parallel with image processing. Imagine that I have a Convolutional NN (CNN) that take as an input a (discrete) $256\times256$ image (let's imagine it in grayscale for simplicity). The input to this CNN would then be a $v \in \mathbb R^{256 \times 256}$, where each element $v_i \in \mathbb R \ ; v_i \in [0,1]$. Although this is a typical architecture for image processing [3], and it has been around since 1989 [4], it has a couple of limitations:
 - The input **has to** be $256\times256$, the need of different dimension leads to a new NN and a new training.
 - In case of regression, the output **has to** a fixed dimension, the need of different dimension leads to a new NN and a new training.
-For the case of image processing, where there's no trivial underlying function behind the image, we cannot take advantage of the use of Neural Operators, but in the case of distributions of physical quantities, e.g., temperature, where there's a underlying function behind it, we can leverage the use of Neural Operators to understand distribution function, and make predictions/controls based on it, decoupling the parametrization $\Theta$ from the discretization of the data. \[cite] *et al.* compared the errors of two networks: U-Net (NN topology) and PCA-Net (Neural operator topology), that were trained on different discretizations of the *same underlying function*, and the result is shown below:
+For the case of image processing, where there's no trivial underlying function behind the image, we cannot take advantage of the use of Neural Operators, but in the case of distributions of physical quantities, e.g., temperature, where there's a underlying function behind it, we can leverage the use of Neural Operators to understand distribution function, and make predictions/controls based on it, decoupling the parametrization $\Theta$ from the discretization of the data. [5] *et al.* compared the errors of two networks: U-Net (NN topology) and PCA-Net (Neural operator topology), that were trained on different discretizations of the *same underlying function*, and the result is shown below:
 
 ![Alt text](Figures/unetvspca.png)
 
@@ -83,7 +83,7 @@ A general diagram is shown below:
 
 In this case, we can see that our $\mathcal G^\dagger$ can be given by $\mathcal G^\dagger = K_\mathcal X \circ \varphi\circ L_\mathcal Y$, where $K_\mathcal X$ and $L_\mathcal Y$ are the operators that project $\mathcal X$ and $\mathcal Y$ to the non-infinite dimension spaces $\mathbb R^{n}$ and $\mathbb R^{n}$, respectively, and $\varphi$ is a non-linear function that maps $\mathbb R^{n}$ to $\mathbb R^{m}$. Different selections of the set {$K_\mathcal W$, $L_\mathcal W$, $\varphi$} generate different classes of Neural Operators.
 
-We can, from this, see the first limitation of this technique: we're limited by how well is the approximation of $K_\mathcal WL_\mathcal W \approx I$. It turns out that, as described by \[cite], this is approximation is fairly general:
+We can, from this, see the first limitation of this technique: we're limited by how well is the approximation of $K_\mathcal WL_\mathcal W \approx I$. It turns out that, as described by [5], this is approximation is fairly general:
 Universal approximation:
 Let:
 - $\mathcal X$ and $\mathcal Y$ be separable Banach spaces.
@@ -103,7 +103,7 @@ If $\mathcal Y$ is separable Hilbert space, and $\epsilon > 0$, *there exists* c
 Let's start by giving two classes of Neural Operators, the Principal Component Analysis Network (PCA-NET) and the Deep Operator Network (DeepONet).
 
 ## PCA
-First proposed by \[cite], we're going to define the PCA-NET approximation by analyzing our input and output spaces using a PCA-like technique.
+First proposed by [6], we're going to define the PCA-NET approximation by analyzing our input and output spaces using a PCA-like technique.
 Let:
 - $\mathcal X$ and $\mathcal Y$ be separable Banach spaces, and let $x\in K\subset\mathcal X$, with $K$ compact.
 - $\mathcal G$ (the operator that we're trying to approximate) be continuous.
@@ -121,7 +121,7 @@ The final approximation $\mathcal G^\dagger_{\text{PCA}}:\mathcal X \times \Thet
 That is, the output is the *linear combination* of the PCA output basis functions {$\psi_j$}, weighted by NN coefficients $\varphi_j$, that have as input the $\mathrm Lx$ mapping of the input to the PCA space.
 
 ## DeepONet
-Proposed by \[cite], the DeepONet generalizes the idea of PCA-NET, by means of *learning* the PCA basis functions of the output space $\mathcal Y$, i.e., $\psi_1,...,\psi_m$ are now NNs. The parameter space is then composed of two distinct set of parameters to be learned: $\theta_\varphi$, the same parameters as the original PCA-NET, and $\theta_\psi$, the parameters for the PCA basis functions of the output space. We will then have:
+Proposed by [7], the DeepONet generalizes the idea of PCA-NET, by means of *learning* the PCA basis functions of the output space $\mathcal Y$, i.e., $\psi_1,...,\psi_m$ are now NNs. The parameter space is then composed of two distinct set of parameters to be learned: $\theta_\varphi$, the same parameters as the original PCA-NET, and $\theta_\psi$, the parameters for the PCA basis functions of the output space. We will then have:
 
 ```math
 \begin{align}
@@ -130,7 +130,7 @@ Proposed by \[cite], the DeepONet generalizes the idea of PCA-NET, by means of *
 ```
 
 ## Overcoming the curse of dimensionality
-One of the big problems of these approaches is the fact $L_\mathcal Y$ is a linear combination of the {$\psi_j$}. This leads to the need of an doubly exponential growth in the amount of data, when compared to $n$ (the size of the PCA basis functions of the input space $\mathcal X$), to achieve convergence \[cite]. To overcome this difficulty, we're going to generalize this idea of linear approximation of operators to the non-linear case.
+One of the big problems of these approaches is the fact $L_\mathcal Y$ is a linear combination of the {$\psi_j$}. This leads to the need of an doubly exponential growth in the amount of data, when compared to $n$ (the size of the PCA basis functions of the input space $\mathcal X$), to achieve convergence [8]. To overcome this difficulty, we're going to generalize this idea of linear approximation of operators to the non-linear case.
 
 Let:
 - $\mathcal X$ and $\mathcal Y$ be function spaces over $\Omega \subset \mathbb R^d$
@@ -170,7 +170,7 @@ S_l(a)(x) = \sigma_l\bigg( W_la(x) + b_l + \mathcal F^{-1}\{\hat\kappa_l(v) \hat
 ```
 where $\Omega^\ddagger \subset \mathbb C^d$ represent the spectral Fourier space related to $\Omega$.
 
-This is basically what defines the Fourier Neural Operator (FNO): the Neural Operator $\mathcal G^\dagger=S_1\circ \text{...} \circ S_L$ where each one of these $S_l$ is done by "filtering" the previous output function using its Fourier expansions.
+This is basically what defines the Fourier Neural Operator (FNO): the Neural Operator $\mathcal G^\dagger=S_1\circ \text{...} \circ S_L$ where each one of these $S_l$ is done by "filtering" the previous output function using its Fourier expansions, first described by [9].
 
 The overall diagram of the process is shown bellow, and a walkthrough will follow:
 
@@ -179,7 +179,9 @@ The overall diagram of the process is shown bellow, and a walkthrough will follo
 ## Walkthrough
 
 ### Lifting (P) and Projection (Q) layers
+The Lifting layer (P) maps the input function from its original low-dimensional channel space into a higher-dimensional latent space. This is typically done with a pointwise linear layer (a 1×1 convolution). The reason for this expansion is that the Fourier layers approximate nonlinear operators more effectively when they operate on a wide latent representation, giving the model the expressive capacity needed to learn complex mappings such as PDE solution operators.
 
+The Projection layer (Q) performs the opposite transformation: it takes the final high-dimensional latent features produced by the Fourier layers and compresses them back into the desired output channel dimension. Like the lifting layer, it is usually a pointwise linear map. This step converts the latent representation into the actual predicted function (e.g., pressure, velocity, temperature), acting as the final interface between the learned operator and the physical output space.
 
 ### Fourier layers
 As stated before, the Fourier Layers are composed following the equation below:
@@ -217,18 +219,9 @@ With the maximum difference between Prediction and Ground Truth being, once agai
 
 
 
-# Galerkin 
-Before talking abour the Galerkin transformer, it could be interesting to talk about the Galerkin Projection.
+# Galerkin transformer
 
-## Galerkin Projection
-Similar to PCA, the Galerkin Projection projects a function onto a basis of function{$\xi_i$}, but **respecting a operator**. That is, imagine that I have an operator $\mathcal G$ s.t. $\mathcal G[x] = y$ where $x \in \mathcal X$ and $y \in \mathcal Y$ are functions, we can approximate x by means of 
-```math
-x(u) \approx \sum_i c_i\xi_i(u)
-```
-
-
-## Galerkin Transformer
-An interesting thing about transformer is that, in general, the whole output function depends globally on the input function. I.e., let the function $f(x)$, solution of a certain PDE that has as input $g(x)$, and let $x_0\in\Omega$ a fixed point; $f(x_0)$ will depend on $g(x)\forall x\in\Omega$. With this in mind, and creating a parallel with transformers and Attention, Shuhao _et al._ \[cite] developed the Galerkin transformer, that uses an "attention-based" kernel $\kappa_l(x,z)$.
+An interesting thing about transformer is that, in general, the whole output function depends globally on the input function. I.e., let the function $f(x)$, solution of a certain PDE that has as input $g(x)$, and let $x_0\in\Omega$ a fixed point; $f(x_0)$ will depend on $g(x)\forall x\in\Omega$. With this in mind, and creating a parallel with transformers and Attention, Shuhao _et al._ [10] developed the Galerkin transformer, that uses an "attention-based" kernel $\kappa_l(x,z)$.
 
 This kernel embodies the essential non-local coupling across the spatial domain, dictating how information at point $z$ influences the output at point $x$. In its continuous form, the kernel $\kappa_l$ is too complex to parameterize directly. We can achieve an approximation by representing the kernel through a factorized form: $\kappa_l(x, z) \approx \phi(Q_l a(x))^\top \psi(K_l a(z))$, where $Q_l$ and $K_l$ are learnable linear maps, and $\phi$ and $\psi$ are feature transformations. Intuitively, each spatial location is mapped to a vector that describes its role in global interactions. 
 
@@ -238,16 +231,40 @@ To complete the information aggregation, a third linear map, $V_l$, transforms $
 
 The Galerkin transformer is a specific case where the function $a(x)$ is expanded in a finite basis $\{\phi_i(x)\}_{i=1}^M$ using a coefficient vector $c=(c_1,\dots,c_M)$. In this case, attention is computed between these modal coefficients rather than spatial points. Each mode $i$ produces its own query, key, and value vectors via the same projection operators, resulting in the modal update: $\tilde{c}_i = \sigma_l\left(W_l c_i + b_l + \sum_{j} \phi(Q_l c_i)^\top \psi(K_l c_j)\, V_l c_j \right)$. This modal attention mechanism ensures the learned operator acts within the finite-dimensional Galerkin subspace, preserving the projection structure of PDE solvers while allowing for adaptive, data-driven coupling between modes.
 # Potential improvements and connection to the PINNs
-All the networks shown are classified as "PDE-agnostic", that is, there's no implicit step that ensures that our predicted output matches the PDE that we're trying to solve.
-
-But PINN-based structures are being develop to connect this two concepts.
+All the networks shown are classified as "PDE-agnostic", that is, there's no implicit step that ensures that our predicted output matches the PDE that we're trying to solve. But PINN-based structures are being develop to connect this two concepts [11].
 
 # Large-scale surrogates
--- TODO --
 
-Papers to cite:
+Traditional FNO applications face a significant limitation when tackling massive, real-world 3D simulations where the input data and network weights cannot fit onto a single GPU. [12] introduced a model-parallel version of FNOs that utilizes domain-decomposition to distribute both the input data and the network weights across multiple GPUs. This innovation allowed the model to handle problems involving billions of variables (e.g., up to 2.6 billion variables on 512 A100 GPUs), making it practical for large-scale applications like simulating multiphase CO₂ dynamics for carbon capture and storage (CCS). By shifting the computational strugle to the training phase, the resulting surrogate model achieved multiple orders of magnitude speedup during inference compared to traditional numerical solvers.
 
-📖 T. Grady: Model-Parallel Fourier Neural Operators as Learned Surrogates for Large-Scale Parametric PDEs (Available [here](https://www.sciencedirect.com/science/article/pii/S0098300423001061?casa_token=49-AswW96sUAAAAA:rgUui8eHQVtqwTAn4uzR4-s9i5_ThGu0Fl3m_GI6i5xgYUMbHpgjwkJYgW9l6VFGPdCCjA_LUck))
+Another challenge in training deep surrogate models is the storage-intensive process of creating large, high-fidelity datasets. The conventional approach (generating simulations, saving them to disk, and reading them back, commonly named offline training)creates an I/O and storage bottleneck that limits dataset size and diversity. [13] introduced an open-source online training framework designed to suppress this issue. The framework organizes the simultaneous and executes the numerical solvers and a training server in parallel, allowing data to be streamed directly to the network without intermediate disk storage. This file-avoiding method enables training with a potentially limitless amount of unique data, only constrained by available compute resources. By exposing models like FNOs and Fully Connected Networks to significantly larger and more diverse datasets, the framework demonstrated improved model generalization, reducing validation errors and achieving accuracy gains of 16% for FNO and 68% for Fully Connected Networks compared to traditional offline training.
 
-📖 L. Meyer: Training Deep Surrogate Models with Large Scale Online Learning (Available [here](https://proceedings.mlr.press/v202/meyer23b/meyer23b.pdf))
+---
+# References
 
+[1] McCulloch, Warren S., and Walter Pitts. "A logical calculus of the ideas immanent in nervous activity." The bulletin of mathematical biophysics 5.4 (1943): 115-133.
+
+[2] Chen, Tianping, and Hong Chen. "Universal approximation to nonlinear operators by neural networks with arbitrary activation functions and its application to dynamical systems." IEEE transactions on neural networks 6.4 (1995): 911-917.
+
+[3] Anwar, Syed Muhammad, et al. "Medical image analysis using convolutional neural networks: a review." Journal of medical systems 42.11 (2018): 226.
+
+[4] LeCun, Yann, et al. "Backpropagation applied to handwritten zip code recognition." Neural computation 1.4 (1989): 541-551.
+
+[5] Neural operator: Learning maps between function spaces with
+applications to pdes.
+
+[6] Bhattacharya, Kaushik, et al. "Model reduction and neural networks for parametric PDEs." The SMAI journal of computational mathematics 7 (2021): 121-157.
+
+[7] Lu, Lu, Pengzhan Jin, and George Em Karniadakis. "Deeponet: Learning nonlinear operators for identifying differential equations based on the universal approximation theorem of operators." arXiv preprint arXiv:1910.03193 (2019).
+
+[8] Cohen, Albert, and Ronald DeVore. "Approximation of high-dimensional parametric PDEs." Acta Numerica 24 (2015): 1-159.
+
+[9] Li, Zongyi, et al. "Fourier neural operator for parametric partial differential equations." arXiv preprint arXiv:2010.08895 (2020).
+
+[10] Cao, Shuhao. "Choose a transformer: Fourier or galerkin." Advances in neural information processing systems 34 (2021): 24924-24940.
+
+[11] Dhingra, Mrigank, et al. "Localized PCA-Net Neural Operators for Scalable Solution Reconstruction of Elliptic PDEs." arXiv preprint arXiv:2509.18110 (2025).
+
+[12] Grady, Thomas J., et al. "Model-parallel Fourier neural operators as learned surrogates for large-scale parametric PDEs." Computers & Geosciences 178 (2023): 105402.
+
+[13] Meyer, Lucas Thibaut, et al. "Training deep surrogate models with large scale online learning." International Conference on Machine Learning. PMLR, 2023.

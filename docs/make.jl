@@ -32,11 +32,35 @@ if !isdir(build_dir)
     symlink(joinpath(repo_dir, "class03"),
         joinpath(repo_dir, "docs", "src", "class03")
     )
+    symlink(joinpath(repo_dir, "class04"),
+        joinpath(repo_dir, "docs", "src", "class04")
+    )
     symlink(joinpath(repo_dir, "class05"),
         joinpath(repo_dir, "docs", "src", "class05")
     )
+    symlink(joinpath(repo_dir, "class06"),
+        joinpath(repo_dir, "docs", "src", "class06")
+    )
+    symlink(joinpath(repo_dir, "class07"),
+        joinpath(repo_dir, "docs", "src", "class07")
+    )
     symlink(joinpath(repo_dir, "class08"),
         joinpath(repo_dir, "docs", "src", "class08")
+    )
+    symlink(joinpath(repo_dir, "class09"),
+        joinpath(repo_dir, "docs", "src", "class09")
+    )
+    symlink(joinpath(repo_dir, "class10"),
+        joinpath(repo_dir, "docs", "src", "class10")
+    )
+    symlink(joinpath(repo_dir, "class11"),
+        joinpath(repo_dir, "docs", "src", "class11")
+    )
+    symlink(joinpath(repo_dir, "class12"),
+        joinpath(repo_dir, "docs", "src", "class12")
+    )
+    symlink(joinpath(repo_dir, "class13"),
+        joinpath(repo_dir, "docs", "src", "class13")
     )
     symlink(joinpath(repo_dir, "class15"),
         joinpath(repo_dir, "docs", "src", "class15")

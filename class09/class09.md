@@ -7,5 +7,8 @@
 
 ---
 
-Add notes, links, and resources below.
+François Pacaud's Guest Lecture for the Optimal Control & Learning Course.
 
+The lecture covered Nonlinear Programming theory, the fundamentals and practical lessons of GPU-accelerated optimization, and applications in optimal control.
+
+[Video Lecture Link](https://www.youtube.com/watch?v=fhCo3UYmbFc)

@@ -7,5 +7,9 @@
 
 ---
 
-Add notes, links, and resources below.
+Henrique Ferrolho's Guest Lecture for the Optimal Control & Learning Course.
+
+The lecture covered Nonlinear trajectory optimization for robots in Julia.
+
+[Video Lecture Link](https://www.youtube.com/watch?v=rMo_o1j7ukM)
 

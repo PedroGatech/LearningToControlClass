@@ -16,7 +16,10 @@ plutos = [
     joinpath(repo_dir, "class02", "part1_root_finding.html"),
     joinpath(repo_dir, "class02", "part2_eq_constraints.html"),
     joinpath(repo_dir, "class02", "part3_ipm.html"),
+    joinpath(repo_dir, "class03", "class3_pluto_notebook.html"),
     joinpath(repo_dir, "class05", "class05.html"),
+    joinpath(repo_dir, "class08", "class08.html"),
+    joinpath(repo_dir, "class15", "class15.html"),
 ]
 
 if !isdir(build_dir)
@@ -26,8 +29,17 @@ if !isdir(build_dir)
     symlink(joinpath(repo_dir, "class02"),
         joinpath(repo_dir, "docs", "src", "class02")
     )
+    symlink(joinpath(repo_dir, "class03"),
+        joinpath(repo_dir, "docs", "src", "class03")
+    )
     symlink(joinpath(repo_dir, "class05"),
         joinpath(repo_dir, "docs", "src", "class05")
+    )
+    symlink(joinpath(repo_dir, "class08"),
+        joinpath(repo_dir, "docs", "src", "class08")
+    )
+    symlink(joinpath(repo_dir, "class15"),
+        joinpath(repo_dir, "docs", "src", "class15")
     )
 end
 
@@ -49,7 +61,19 @@ makedocs(
             "class01/background_materials/git_adventure_guide.md",
         ],
         "Class 2" => "class02/overview.md",
+        "Class 3" => "class03/class03.md",
+        "Class 4" => "class04/class04.md",
         "Class 5" => "class05/class05.md",
+        "Class 6" => "class06/class06.md",
+        "Class 7" => "class07/class07.md",
+        "Class 8" => "class08/class08.md",
+        "Class 9" => "class09/class09.md",
+        "Class 10" => "class10/class10.md",
+        # "Class 11" => "class11/class11.md",
+        "Class 12" => "class12/class12.md",
+        "Class 13" => "class13/class13.md",
+        # "Class 14" => "class14/class14.md",
+        "Class 15" => "class15/class15.md",
     ],
 )
 

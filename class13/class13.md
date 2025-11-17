@@ -7,5 +7,8 @@
 
 ---
 
-Add notes, links, and resources below.
+Charlelie Laurent's Guest Lecture for the Optimal Control & Learning Course.
 
+The lecture explored the NVIDIA PhysicsNeMo framework, highlighting its use in training AI surrogates to accelerate physics simulations. It also provided a theoretical overview of how Graph Neural Networks can enhance generalization in complex settings.
+
+[Video Lecture Link](https://www.youtube.com/watch?v=hYOgv3Rptxk&t=28s).

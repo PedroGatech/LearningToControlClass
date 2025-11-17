@@ -6,5 +6,9 @@
 
 ---
 
-Add notes, links, and resources below.
+Theory content is available [here](Class03_Chapter_version1.pdf)
+
+The notebook for this class is available [here](https://learningtooptimize.github.io/LearningToControlClass/dev/class03/class3_pluto_notebook.html).
+
+Theory slides are available [here](Class03_Theory.pdf).
 

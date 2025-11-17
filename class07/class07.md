@@ -1,10 +1,9 @@
 # Class 7 — 10/03/2025
 
-**Presenter:** TBD
+**Presenter:** Jouke van Westrenen
 
 **Topic:** Essentials of PDEs for control engineers; weak forms; FEM/FDM review
 
 ---
 
-Add notes, links, and resources below.
-
+Files for this class are available [here](https://github.com/LearningToOptimize/LearningToControlClass/tree/main/class07).
